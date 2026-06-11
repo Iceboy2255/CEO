@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 #   LTC_ADDRESS      → your Litecoin wallet address
 # ─────────────────────────────────────────
 TOKEN          = os.environ.get("BOT_TOKEN")
-ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "@Admin")
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "@Leadssplug")
+ADMIN_USERNAME_2 = "@hostingCE0"   # second admin — hardcoded as requested
 ADMIN_CHAT_ID  = os.environ.get("ADMIN_CHAT_ID", "")
 BTC_ADDRESS    = os.environ.get("BTC_ADDRESS", "YOUR_BTC_ADDRESS")
 ETH_ADDRESS    = os.environ.get("ETH_ADDRESS", "YOUR_ETH_USDT_ADDRESS")
@@ -142,35 +143,38 @@ CRYPTO_PRICES = {
     "10k": 1500, "15k": 2100, "20k": 2600, "25k": 3000
 }
 
-FAQ_TEXT = """❓ *FAQ*
+FAQ_TEXT = """❓ *Frequently Asked Questions*
 
-Frequently Asked Questions
-How to top up?
-1. Please tap the start button on the leadssplug bot
-2. Click Wallet.’
-3. Select ‘Top Up’
-3. Select the amount u wish the top up
-4. Click the link provided or manually send the amount. Priority transactions are received quicker.
+━━━━━━━━━━━━━━━━━━━━
+*How to top up?*
+1\. Tap the start button on the LeadsPlug bot
+2\. Click 'Wallet'
+3\. Select 'Top Up'
+4\. Select the amount you wish to top up
+5\. Click the link provided or manually send the amount\. Priority transactions are received quicker\.
 
-Note: you will be credited at 1 BTC confirmations & 6 ETH confirmations.
+📝 *Note:* You will be credited at 1 BTC confirmation & 6 ETH confirmations\.
 
-How do I receive my leads?
-Once you have topped up, please continue to select the leads you want and the network. The bot will send your files instantly!
+━━━━━━━━━━━━━━━━━━━━
+*How do I receive my leads?*
+Once you have topped up, please continue to select the leads you want and the network\. The bot will send your files instantly\!
 
-Did you encounter a bad batch?
-Please private message  @hostingCE0 to get this resolved, we take care of our customers & want to make sure they are treated with the respect they deserve!
+━━━━━━━━━━━━━━━━━━━━
+*Did you encounter a bad batch?*
+Please private message {admin2} to get this resolved\. We take care of our customers & want to make sure they are treated with the respect they deserve\!
 
-Interested in bulk orders?
-If your requested amount is larger than 50k, please contact @hostingCE0 directly so he may discuss further private discounts. You will get leads are very close to cost price. This is for bulk buyers only!
+━━━━━━━━━━━━━━━━━━━━
+*Interested in bulk orders?*
+If your requested amount is larger than 50k, please contact {admin2} directly so he may discuss further private discounts\. You will get leads at very close to cost price\. This is for bulk buyers only\!
 
-Would you like to make a request for a custom country?
-If you desire a country or prefix that we do not have on the bot, please provide the country name/prefix to @hostingCE0
-Note: orders may take upto 24 hours, sometimes quicker depending on how busy it is.
+━━━━━━━━━━━━━━━━━━━━
+*Would you like to request a custom country?*
+If you desire a country or prefix that we do not have on the bot, please provide the country name/prefix to {admin2}\.
+📝 *Note:* Orders may take up to 24 hours, sometimes quicker depending on how busy it is\.
 
-Do we condone malicious behaviour with the product we supply?
-We absolutely & 100% do not support this behaviour.
-We are entirely against it, if you are using it for malicious behaviour,
-you will be blocked and banned from using our services.."""
+━━━━━━━━━━━━━━━━━━━━
+*Do we condone malicious behaviour?*
+We absolutely & 100% do NOT support this behaviour\. We are entirely against it\. If you are using it for malicious behaviour, you will be blocked and banned from using our services\."""
 
 # ─────────────────────────────────────────
 # KEYBOARD HELPERS
@@ -567,7 +571,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── FAQ ──
     elif data == "faq":
         await query.edit_message_text(
-            FAQ_TEXT.format(admin=admin),
+            FAQ_TEXT.format(admin=admin, admin2=ADMIN_USERNAME_2),
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
         )
