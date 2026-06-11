@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────
 # RAILWAY VARIABLES — set in Railway → Variables tab
 #   BOT_TOKEN        → token from @BotFather
-#   ADMIN_USERNAME   → e.g. @Leadssplug
+#   ADMIN_USERNAME   → e.g. @hostingCE0
 #   ADMIN_CHAT_ID    → your numeric ID from @userinfobot
 #   BTC_ADDRESS      → your Bitcoin wallet address
 #   ETH_ADDRESS      → your Ethereum / USDT (ERC20) wallet address
@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 #   LTC_ADDRESS      → your Litecoin wallet address
 # ─────────────────────────────────────────
 TOKEN          = os.environ.get("BOT_TOKEN")
-ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "@Leadssplug")
-ADMIN_USERNAME_2 = "@hostingCE0"   # second admin — hardcoded as requested
+ADMIN_USERNAME = "@hostingCE0"
 ADMIN_CHAT_ID  = os.environ.get("ADMIN_CHAT_ID", "")
 BTC_ADDRESS    = os.environ.get("BTC_ADDRESS", "YOUR_BTC_ADDRESS")
 ETH_ADDRESS    = os.environ.get("ETH_ADDRESS", "YOUR_ETH_USDT_ADDRESS")
@@ -571,7 +570,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── FAQ ──
     elif data == "faq":
         await query.edit_message_text(
-            FAQ_TEXT.format(admin=admin, admin2=ADMIN_USERNAME_2),
+            FAQ_TEXT.format(admin=admin, admin2=admin),
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
         )
