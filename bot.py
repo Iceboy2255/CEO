@@ -144,20 +144,33 @@ CRYPTO_PRICES = {
 
 FAQ_TEXT = """❓ *FAQ*
 
-*How do I place an order?*
-Select your lead type → country/exchange → carrier/provider → amount → pay.
+Frequently Asked Questions
+How to top up?
+1. Please tap the start button on the leadssplug bot
+2. Click Wallet.’
+3. Select ‘Top Up’
+3. Select the amount u wish the top up
+4. Click the link provided or manually send the amount. Priority transactions are received quicker.
 
-*How do I top up my wallet?*
-Go to Wallet → Top Up → select token → select amount → send crypto to the address shown.
+Note: you will be credited at 1 BTC confirmations & 6 ETH confirmations.
 
-*How are leads delivered?*
-Sent as a file directly in this chat after payment is confirmed.
+How do I receive my leads?
+Once you have topped up, please continue to select the leads you want and the network. The bot will send your files instantly!
 
-*How long does delivery take?*
-Usually within 24 hours of payment confirmation.
+Did you encounter a bad batch?
+Please private message  @hostingCE0 to get this resolved, we take care of our customers & want to make sure they are treated with the respect they deserve!
 
-*Need a custom amount?*
-Message {admin} directly."""
+Interested in bulk orders?
+If your requested amount is larger than 50k, please contact @hostingCE0 directly so he may discuss further private discounts. You will get leads are very close to cost price. This is for bulk buyers only!
+
+Would you like to make a request for a custom country?
+If you desire a country or prefix that we do not have on the bot, please provide the country name/prefix to @hostingCE0
+Note: orders may take upto 24 hours, sometimes quicker depending on how busy it is.
+
+Do we condone malicious behaviour with the product we supply?
+We absolutely & 100% do not support this behaviour.
+We are entirely against it, if you are using it for malicious behaviour,
+you will be blocked and banned from using our services.."""
 
 # ─────────────────────────────────────────
 # KEYBOARD HELPERS
