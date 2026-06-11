@@ -2,36 +2,48 @@ import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    Application, CommandHandler, CallbackQueryHandler, ContextTypes
+    Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────
-# RAILWAY VARIABLES
-#   BOT_TOKEN      → token from @BotFather
-#   ADMIN_USERNAME → e.g. @Leadssplug
-#   ADMIN_CHAT_ID  → your numeric ID from @userinfobot
-#   USDT_ADDRESS   → your USDT TRC20 wallet address
-#   BTC_ADDRESS    → your BTC wallet address
+# RAILWAY VARIABLES — set in Railway → Variables tab
+#   BOT_TOKEN        → token from @BotFather
+#   ADMIN_USERNAME   → e.g. @Leadssplug
+#   ADMIN_CHAT_ID    → your numeric ID from @userinfobot
+#   BTC_ADDRESS      → your Bitcoin wallet address
+#   ETH_ADDRESS      → your Ethereum / USDT (ERC20) wallet address
+#   SOL_ADDRESS      → your Solana wallet address
+#   LTC_ADDRESS      → your Litecoin wallet address
 # ─────────────────────────────────────────
 TOKEN          = os.environ.get("BOT_TOKEN")
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "@Admin")
 ADMIN_CHAT_ID  = os.environ.get("ADMIN_CHAT_ID", "")
-USDT_ADDRESS   = os.environ.get("USDT_ADDRESS", "YOUR_USDT_ADDRESS")
 BTC_ADDRESS    = os.environ.get("BTC_ADDRESS", "YOUR_BTC_ADDRESS")
+ETH_ADDRESS    = os.environ.get("ETH_ADDRESS", "YOUR_ETH_USDT_ADDRESS")
+SOL_ADDRESS    = os.environ.get("SOL_ADDRESS", "YOUR_SOL_ADDRESS")
+LTC_ADDRESS    = os.environ.get("LTC_ADDRESS", "YOUR_LTC_ADDRESS")
+
+WALLET_ADDRESSES = {
+    "Bitcoin (BTC)":        BTC_ADDRESS,
+    "Ethereum (ETH) / USDT": ETH_ADDRESS,
+    "Solana (SOL)":         SOL_ADDRESS,
+    "Litecoin (LTC)":       LTC_ADDRESS,
+}
+
+TOPUP_TOKENS  = list(WALLET_ADDRESSES.keys())
+TOPUP_AMOUNTS = [50, 80, 120, 150, 180, 220, 245, 260, 300, 350, 500, 800, 1000, 1500]
 
 # ─────────────────────────────────────────
 # EMAIL DATA
 # ─────────────────────────────────────────
-
 EMAIL_COUNTRIES = [
     "AUSTRALIA", "BRAZIL", "CANADA", "FRANCE",
     "GERMANY", "HUNGARY", "ITALY", "SPAIN", "UK", "USA"
 ]
 EMAIL_PROVIDERS = ["Business", "Crypto", "Gaming", "Music", "Shopping", "Social Media"]
-EMAIL_AMOUNTS   = ["1k", "5k", "10k", "25k", "30k", "75k"]
 EMAIL_PRICES    = {"1k": 5, "5k": 15, "10k": 20, "25k": 50, "30k": 90, "75k": 130}
 
 EMAIL_PRICE_LIST = """📋 *Email Leads Price List*
@@ -44,7 +56,6 @@ EMAIL_PRICE_LIST = """📋 *Email Leads Price List*
 # ─────────────────────────────────────────
 # SMS DATA
 # ─────────────────────────────────────────
-
 SMS_CARRIERS = {
     "AUSTRALIA":          ["Telstra", "Optus", "Vodafone AU", "TPG", "Boost Mobile AU", "Aldi Mobile", "Amaysim"],
     "AUSTRIA":            ["A1 Telekom", "Magenta AT", "Drei Austria", "HoT", "Spusu"],
@@ -102,7 +113,6 @@ SMS_CARRIERS = {
     "USA":                ["AT&T", "Verizon", "T-Mobile US", "Sprint", "Cricket", "Metro PCS", "Boost US", "US Cellular"],
     "VIETNAM":            ["Viettel", "Mobifone", "Vinaphone", "Gmobile"],
 }
-
 SMS_COUNTRIES = sorted(SMS_CARRIERS.keys())
 SMS_AMOUNTS   = ["1k", "5k", "10k", "25k", "50k", "100k", "200k", "500k"]
 SMS_PRICES    = {
@@ -111,7 +121,6 @@ SMS_PRICES    = {
     "30k": 440, "35k": 490, "40k": 520, "45k": 540,
     "50k": 560, "100k": 700, "200k": 1000, "500k": 1600
 }
-
 SMS_PRICE_LIST = """📋 *SMS Leads Price List*
 1k — £30 | 2k — £54 | 3k — £72
 4k — £90 | 5k — £100 | 10k — £160
@@ -124,33 +133,22 @@ SMS_PRICE_LIST = """📋 *SMS Leads Price List*
 # ─────────────────────────────────────────
 # CRYPTO LEADS DATA
 # ─────────────────────────────────────────
-
 CRYPTO_EXCHANGES = [
     "Binance", "Bybit", "Coinbase", "OKX", "Upbit",
     "Bitget", "Kraken", "Kucoin", "Mexc", "Bitfinex"
 ]
-
-CRYPTO_AMOUNTS = [
-    "1k", "2k", "3k", "4k", "5k",
-    "10k", "15k", "20k", "25k"
-]
-
 CRYPTO_PRICES = {
     "1k": 200, "2k": 380, "3k": 540, "4k": 680, "5k": 800,
     "10k": 1500, "15k": 2100, "20k": 2600, "25k": 3000
 }
 
-# ─────────────────────────────────────────
-# FAQ
-# ─────────────────────────────────────────
-
 FAQ_TEXT = """❓ *FAQ*
 
 *How do I place an order?*
-Select your lead type → country/exchange → carrier/provider → amount → pay with crypto.
+Select your lead type → country/exchange → carrier/provider → amount → pay.
 
-*What crypto do you accept?*
-USDT (TRC20) and BTC.
+*How do I top up my wallet?*
+Go to Wallet → Top Up → select token → select amount → send crypto to the address shown.
 
 *How are leads delivered?*
 Sent as a file directly in this chat after payment is confirmed.
@@ -166,8 +164,7 @@ Message {admin} directly."""
 # ─────────────────────────────────────────
 
 def make_grid(items, callback_prefix, cols=2, back_callback="main_menu"):
-    buttons = []
-    row = []
+    buttons, row = [], []
     for item in items:
         row.append(InlineKeyboardButton(item, callback_data=f"{callback_prefix}:{item}"))
         if len(row) == cols:
@@ -188,13 +185,6 @@ def main_menu_keyboard():
          InlineKeyboardButton("❓ FAQ",    callback_data="faq")],
     ])
 
-
-def payment_keyboard(order_ref):
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("✅ I've Sent Payment", callback_data=f"paid:{order_ref}")],
-        [InlineKeyboardButton("⬅️ Back to Menu",      callback_data="main_menu")],
-    ])
-
 # ─────────────────────────────────────────
 # HANDLERS
 # ─────────────────────────────────────────
@@ -209,23 +199,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Do you agree to not use the products we provide for illegal or malicious intent?",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Accept", callback_data="tos_accept")],
+                [InlineKeyboardButton("✅ Accept",  callback_data="tos_accept")],
                 [InlineKeyboardButton("❌ Decline", callback_data="tos_decline")],
             ])
         )
     else:
-        await show_welcome(update.message, context, user)
+        await send_welcome(update.message, context)
 
 
-async def show_welcome(message_obj, context, user):
+async def send_welcome(msg, context):
     balance = context.user_data.get("balance", 0)
     admin   = ADMIN_USERNAME
-    await message_obj.reply_text(
-        f"👋 Welcome to {admin}!\n\n"
-        f"Tap 'Leads' to purchase leads.\n"
-        f"Tap 'Wallet' to view your balance and top up your wallet, in order to purchase leads.\n"
-        f"Tap 'FAQs' for a list of Frequently Asked Questions.\n\n"
-        f"We do not condone any illegal or illicit behaviour with the product we sell.\n\n"
+    await msg.reply_text(
+        f"Welcome to {admin}!\n\n"
+        "Tap 'Leads' to purchase leads.\n"
+        "Tap 'Wallet' to view your balance and top up your wallet, in order to purchase leads.\n"
+        "Tap 'FAQs' for a list of Frequently Asked Questions.\n\n"
+        "We do not condone any illegal or illicit behaviour with the product we sell.\n\n"
         f"💰 *Current Balance: £{balance}*",
         parse_mode="Markdown",
         reply_markup=main_menu_keyboard()
@@ -233,32 +223,28 @@ async def show_welcome(message_obj, context, user):
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
+    query   = update.callback_query
     await query.answer()
     data    = query.data
     balance = context.user_data.get("balance", 0)
     admin   = ADMIN_USERNAME
     user    = query.from_user
 
-    # ── TERMS OF SERVICE ──
+    # ── TOS ──
     if data == "tos_accept":
         context.user_data["tos_accepted"] = True
         await query.edit_message_text(
-            f"👋 Welcome to {admin}!\n\n"
-            f"Tap 'Leads' to purchase leads.\n"
-            f"Tap 'Wallet' to view your balance and top up your wallet, in order to purchase leads.\n"
-            f"Tap 'FAQs' for a list of Frequently Asked Questions.\n\n"
-            f"We do not condone any illegal or illicit behaviour with the product we sell.\n\n"
+            f"Welcome to {admin}!\n\n"
+            "Tap 'Leads' to purchase leads.\n"
+            "Tap 'Wallet' to view your balance and top up your wallet.\n"
+            "Tap 'FAQs' for Frequently Asked Questions.\n\n"
+            "We do not condone any illegal or illicit behaviour with the product we sell.\n\n"
             f"💰 *Current Balance: £{balance}*",
             parse_mode="Markdown",
             reply_markup=main_menu_keyboard()
         )
-
     elif data == "tos_decline":
-        await query.edit_message_text(
-            "❌ You must accept the Terms of Service to use this bot.\n\n"
-            "Send /start to try again."
-        )
+        await query.edit_message_text("❌ You must accept the Terms of Service.\n\nSend /start to try again.")
 
     # ── MAIN MENU ──
     elif data == "main_menu":
@@ -267,6 +253,92 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             reply_markup=main_menu_keyboard()
         )
+
+    # ══════════════════════════════════════
+    # WALLET & TOP-UP
+    # ══════════════════════════════════════
+    elif data == "wallet":
+        await query.edit_message_text(
+            f"ID: {user.id}\n\n"
+            f"You currently have £{balance} in your wallet.\n\n"
+            "To add more please click on 'Top Up' and select the amount you would like to add to your wallet.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("💳 Top Up",  callback_data="topup_select_token")],
+                [InlineKeyboardButton("⬅️ Back",    callback_data="main_menu")],
+            ])
+        )
+
+    elif data == "topup_select_token":
+        await query.edit_message_text(
+            "Please select which token you would like to top up with:",
+            reply_markup=make_grid(TOPUP_TOKENS, "topup_token", cols=1, back_callback="wallet")
+        )
+
+    elif data.startswith("topup_token:"):
+        token = data.split(":", 1)[1]
+        context.user_data["topup_token"] = token
+        short = token.split("(")[1].replace(")", "").replace(" / USDT", "").strip() if "(" in token else token
+        await query.edit_message_text(
+            f"Select topup amount ({short.split('/')[0].strip()}):",
+            reply_markup=make_grid(
+                [f"£{a}" for a in TOPUP_AMOUNTS],
+                "topup_amount", cols=2, back_callback="topup_select_token"
+            )
+        )
+
+    elif data.startswith("topup_amount:"):
+        amount_str = data.split(":", 1)[1]          # e.g. "£800"
+        amount_val = int(amount_str.replace("£", ""))
+        token      = context.user_data.get("topup_token", "N/A")
+        address    = WALLET_ADDRESSES.get(token, "N/A")
+        short      = token.split("(")[1].replace(")", "").strip() if "(" in token else token
+
+        context.user_data["pending_topup"] = {"token": token, "amount": amount_val, "address": address}
+
+        await query.edit_message_text(
+            f"A new charge of £{amount_val} has been created.\n\n"
+            f"Please send {short} to the address below to top up.\n\n"
+            f"`{address}`\n\n"
+            "The amount will be added to your wallet balance once the required confirmations have been reached.",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ I've Sent Payment", callback_data=f"topup_paid:{amount_val}")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="topup_select_token")],
+            ])
+        )
+
+    elif data.startswith("topup_paid:"):
+        amount_val = int(data.split(":", 1)[1])
+        topup      = context.user_data.get("pending_topup", {})
+
+        await query.edit_message_text(
+            f"✅ *Top-Up Request Submitted!*\n\n"
+            f"Amount: £{amount_val}\n"
+            f"Token: {topup.get('token', 'N/A')}\n\n"
+            "Your balance will be updated once payment is confirmed by our team.\n"
+            f"Contact {admin} if you have any questions.",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]])
+        )
+
+        # Notify admin
+        if ADMIN_CHAT_ID:
+            try:
+                await context.bot.send_message(
+                    chat_id=ADMIN_CHAT_ID,
+                    text=(
+                        f"💳 *TOP-UP REQUEST*\n\n"
+                        f"👤 User: [{user.first_name}](tg://user?id={user.id})\n"
+                        f"🆔 ID: `{user.id}`\n"
+                        f"💰 Amount: £{amount_val}\n"
+                        f"🪙 Token: {topup.get('token', 'N/A')}\n\n"
+                        f"Use /addbalance {user.id} {amount_val} to credit their account after verification."
+                    ),
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logger.error(f"Admin notify error: {e}")
+        context.user_data.pop("pending_topup", None)
 
     # ══════════════════════════════════════
     # EMAIL LEADS
@@ -294,8 +366,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["email_provider"] = provider
         country  = context.user_data.get("email_country", "N/A")
         await query.edit_message_text(
-            f"🌍 *Country:* {country}\n"
-            f"🏢 *Provider:* {provider}\n\n"
+            f"🌍 *Country:* {country}\n🏢 *Provider:* {provider}\n\n"
             "📦 Please select the amount of leads you want to purchase:",
             parse_mode="Markdown",
             reply_markup=make_grid(
@@ -305,25 +376,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data.startswith("email_amount:"):
-        selected = data.split(":", 1)[1]           # e.g. "1k - £5"
+        selected = data.split(":", 1)[1]
         amount   = selected.split(" - ")[0]
         price    = EMAIL_PRICES.get(amount, 0)
-        country  = context.user_data.get("email_country", "N/A")
-        provider = context.user_data.get("email_provider", "N/A")
         context.user_data["pending_order"] = {
-            "type": "Email Leads", "country": country,
-            "provider": provider, "amount": amount, "price": price
+            "type": "Email Leads",
+            "country": context.user_data.get("email_country", "N/A"),
+            "provider": context.user_data.get("email_provider", "N/A"),
+            "amount": amount, "price": price
         }
-        # ToS before confirm
-        await query.edit_message_text(
-            "📜 *Terms of Service*\n\n"
-            "Do you agree to not use the products we provide for illegal or malicious intent?",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Accept",  callback_data="order_tos_accept")],
-                [InlineKeyboardButton("❌ Decline", callback_data="main_menu")],
-            ])
-        )
+        await show_tos(query)
 
     # ══════════════════════════════════════
     # SMS LEADS
@@ -338,7 +400,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data.startswith("sms_country:"):
-        country  = data.split(":", 1)[1]
+        country = data.split(":", 1)[1]
         context.user_data["sms_country"] = country
         carriers = SMS_CARRIERS.get(country, [])
         await query.edit_message_text(
@@ -352,8 +414,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["sms_carrier"] = carrier
         country = context.user_data.get("sms_country", "N/A")
         await query.edit_message_text(
-            f"🌍 *Country:* {country}\n"
-            f"📡 *Carrier:* {carrier}\n\n"
+            f"🌍 *Country:* {country}\n📡 *Carrier:* {carrier}\n\n"
             "📦 Please select the amount of leads you want to purchase:",
             parse_mode="Markdown",
             reply_markup=make_grid(
@@ -366,29 +427,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         selected = data.split(":", 1)[1]
         amount   = selected.split(" - ")[0]
         price    = SMS_PRICES.get(amount, 0)
-        country  = context.user_data.get("sms_country", "N/A")
-        carrier  = context.user_data.get("sms_carrier", "N/A")
         context.user_data["pending_order"] = {
-            "type": "SMS Leads", "country": country,
-            "carrier": carrier, "amount": amount, "price": price
+            "type": "SMS Leads",
+            "country": context.user_data.get("sms_country", "N/A"),
+            "carrier": context.user_data.get("sms_carrier", "N/A"),
+            "amount": amount, "price": price
         }
-        await query.edit_message_text(
-            "📜 *Terms of Service*\n\n"
-            "Do you agree to not use the products we provide for illegal or malicious intent?",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Accept",  callback_data="order_tos_accept")],
-                [InlineKeyboardButton("❌ Decline", callback_data="main_menu")],
-            ])
-        )
+        await show_tos(query)
 
     # ══════════════════════════════════════
     # CRYPTO LEADS
     # ══════════════════════════════════════
     elif data == "crypto_leads":
         await query.edit_message_text(
-            f"💰 *Current Balance: £{balance}*\n\n"
-            "Please select a crypto option:",
+            f"💰 *Current Balance: £{balance}*\n\nPlease select a crypto option:",
             parse_mode="Markdown",
             reply_markup=make_grid(CRYPTO_EXCHANGES, "crypto_exchange", cols=1, back_callback="main_menu")
         )
@@ -397,8 +449,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         exchange = data.split(":", 1)[1]
         context.user_data["crypto_exchange"] = exchange
         await query.edit_message_text(
-            f"💰 *Current Balance: £{balance}*\n\n"
-            f"🏦 *Exchange:* {exchange}\n\n"
+            f"💰 *Current Balance: £{balance}*\n🏦 *Exchange:* {exchange}\n\n"
             "📦 Please select the amount of leads you want to purchase:",
             parse_mode="Markdown",
             reply_markup=make_grid(
@@ -411,32 +462,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         selected = data.split(":", 1)[1]
         amount   = selected.split(" - ")[0]
         price    = CRYPTO_PRICES.get(amount, 0)
-        exchange = context.user_data.get("crypto_exchange", "N/A")
         context.user_data["pending_order"] = {
             "type": "Crypto Leads", "country": "CRYPTO",
-            "provider": exchange, "amount": amount, "price": price
+            "provider": context.user_data.get("crypto_exchange", "N/A"),
+            "amount": amount, "price": price
         }
-        # ToS
-        await query.edit_message_text(
-            "📜 *Terms of Service*\n\n"
-            "Do you agree to not use the products we provide for illegal or malicious intent?",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Accept",  callback_data="order_tos_accept")],
-                [InlineKeyboardButton("❌ Decline", callback_data="main_menu")],
-            ])
-        )
+        await show_tos(query)
 
-    # ══════════════════════════════════════
-    # ORDER TOS → PURCHASE CONFIRMATION
-    # ══════════════════════════════════════
+    # ── ORDER TOS ──
     elif data == "order_tos_accept":
         order = context.user_data.get("pending_order", {})
         if not order:
             await query.edit_message_text("⚠️ Session expired. Please start again.",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Menu", callback_data="main_menu")]]))
             return
-
         provider_label = order.get("provider", order.get("carrier", "N/A"))
         await query.edit_message_text(
             f"🛒 *Purchase Confirmation*\n\n"
@@ -452,67 +491,40 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ])
         )
 
-    # ══════════════════════════════════════
-    # FINAL PURCHASE — balance check + payment
-    # ══════════════════════════════════════
+    # ── ORDER CONFIRM (balance check) ──
     elif data == "order_confirm":
         order   = context.user_data.get("pending_order", {})
         price   = order.get("price", 0)
         balance = context.user_data.get("balance", 0)
-
         if not order:
-            await query.edit_message_text("⚠️ Session expired. Please start again.",
+            await query.edit_message_text("⚠️ Session expired.",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Menu", callback_data="main_menu")]]))
             return
-
-        # Balance check
         if balance < price:
             await query.edit_message_text(
                 "❌PLEASE TOP UP YOUR ACCOUNT❌\n\n"
                 f"Your balance is £{balance} but this order costs £{price}.\n\n"
-                f"Contact {admin} to top up your wallet.",
+                f"Go to Wallet → Top Up to add funds.",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("👛 Wallet", callback_data="wallet")],
-                    [InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")],
+                    [InlineKeyboardButton("👛 Wallet",        callback_data="wallet")],
+                    [InlineKeyboardButton("⬅️ Back to Menu",  callback_data="main_menu")],
                 ])
             )
             return
 
         provider_label = order.get("provider", order.get("carrier", "N/A"))
-        order_ref      = f"{order.get('type', 'ORDER')}-{user.id}-{order.get('amount')}"
+        # Deduct balance
+        context.user_data["balance"] = balance - price
 
         await query.edit_message_text(
             f"✅ *Order Confirmed!*\n\n"
-            f"💳 *Pay with Crypto:*\n\n"
-            f"🔵 *USDT (TRC20):*\n`{USDT_ADDRESS}`\n\n"
-            f"🟠 *BTC:*\n`{BTC_ADDRESS}`\n\n"
-            f"Send exactly £{price} worth and tap below once sent.",
-            parse_mode="Markdown",
-            reply_markup=payment_keyboard(order_ref)
-        )
-
-    # ══════════════════════════════════════
-    # PAYMENT SENT CONFIRMATION
-    # ══════════════════════════════════════
-    elif data.startswith("paid:"):
-        order = context.user_data.get("pending_order", {})
-        if not order:
-            await query.edit_message_text("⚠️ No pending order found. Please start again.",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Menu", callback_data="main_menu")]]))
-            return
-
-        provider_label = order.get("provider", order.get("carrier", "N/A"))
-
-        await query.edit_message_text(
-            f"✅ *Payment Submitted!*\n\n"
-            f"Thank you! Your order has been received.\n\n"
-            f"📦 *Order Details:*\n"
-            f"Type: {order.get('type')}\n"
-            f"Country: {order.get('country')}\n"
-            f"Provider: {provider_label}\n"
-            f"Amount: {order.get('amount')}\n"
-            f"Price: £{order.get('price')}\n\n"
-            f"⏳ We will verify your payment and deliver within 24 hours.\n"
+            f"📋 Type: {order.get('type')}\n"
+            f"🌍 Country: {order.get('country')}\n"
+            f"🏢 Provider: {provider_label}\n"
+            f"📦 Amount: {order.get('amount')}\n"
+            f"💷 Price: £{price}\n"
+            f"💰 Remaining Balance: £{context.user_data['balance']}\n\n"
+            f"⏳ Your leads will be delivered within 24 hours.\n"
             f"Contact {admin} if you have any questions.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]])
@@ -525,31 +537,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     chat_id=ADMIN_CHAT_ID,
                     text=(
                         f"🔔 *NEW ORDER*\n\n"
-                        f"👤 User: [{user.first_name}](tg://user?id={user.id})\n"
-                        f"🆔 ID: `{user.id}`\n"
-                        f"📋 Type: {order.get('type')}\n"
-                        f"🌍 Country: {order.get('country')}\n"
-                        f"🏢 Provider: {provider_label}\n"
-                        f"📦 Amount: {order.get('amount')}\n"
-                        f"💷 Price: £{order.get('price')}\n\n"
-                        f"⚠️ Awaiting payment verification."
+                        f"👤 [{user.first_name}](tg://user?id={user.id})\n"
+                        f"🆔 `{user.id}`\n"
+                        f"📋 {order.get('type')}\n"
+                        f"🌍 {order.get('country')}\n"
+                        f"🏢 {provider_label}\n"
+                        f"📦 {order.get('amount')}\n"
+                        f"💷 £{price} (paid from wallet)"
                     ),
                     parse_mode="Markdown"
                 )
             except Exception as e:
-                logger.error(f"Failed to notify admin: {e}")
-
+                logger.error(f"Admin notify error: {e}")
         context.user_data.pop("pending_order", None)
-
-    # ── WALLET ──
-    elif data == "wallet":
-        await query.edit_message_text(
-            f"👛 *Your Wallet*\n\n"
-            f"💰 Current Balance: £{balance}\n\n"
-            f"To top up your balance, contact {admin}",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
-        )
 
     # ── FAQ ──
     elif data == "faq":
@@ -559,13 +559,50 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
         )
 
+
+async def show_tos(query):
+    await query.edit_message_text(
+        "📜 *Terms of Service*\n\n"
+        "Do you agree to not use the products we provide for illegal or malicious intent?",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ Accept",  callback_data="order_tos_accept")],
+            [InlineKeyboardButton("❌ Decline", callback_data="main_menu")],
+        ])
+    )
+
+
+# ─────────────────────────────────────────
+# ADMIN COMMAND: /addbalance <user_id> <amount>
+# Only works if sent by admin
+# ─────────────────────────────────────────
+async def add_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+        return
+    try:
+        target_id = int(context.args[0])
+        amount    = int(context.args[1])
+        # Store in bot_data keyed by user id
+        if "balances" not in context.bot_data:
+            context.bot_data["balances"] = {}
+        context.bot_data["balances"][target_id] = \
+            context.bot_data["balances"].get(target_id, 0) + amount
+        await update.message.reply_text(f"✅ Added £{amount} to user {target_id}.")
+        await context.bot.send_message(
+            chat_id=target_id,
+            text=f"✅ £{amount} has been added to your wallet!\n\nYour new balance is £{context.bot_data['balances'][target_id]}."
+        )
+    except Exception as e:
+        await update.message.reply_text(f"Usage: /addbalance <user_id> <amount>\nError: {e}")
+
+
 # ─────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────
-
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("addbalance", add_balance))
     app.add_handler(CallbackQueryHandler(button_handler))
     logger.info("Bot is running...")
     app.run_polling()
