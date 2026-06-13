@@ -2,37 +2,37 @@ import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
+    Application, CommandHandler, CallbackQueryHandler, ContextTypes
 )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────
-# RAILWAY VARIABLES — set in Railway → Variables tab
-#   BOT_TOKEN        → token from @BotFather
-#   ADMIN_USERNAME   → e.g. @hostingCE0
-#   ADMIN_CHAT_ID    → your numeric ID from @userinfobot
-#   BTC_ADDRESS      → your Bitcoin wallet address
-#   ETH_ADDRESS      → your Ethereum / USDT (ERC20) wallet address
-#   SOL_ADDRESS      → your Solana wallet address
-#   LTC_ADDRESS      → your Litecoin wallet address
+# RAILWAY VARIABLES
+#   BOT_TOKEN      → token from @BotFather
+#   ADMIN_CHAT_ID  → your numeric ID from @userinfobot
+#   BTC_ADDRESS    → your Bitcoin wallet address
+#   ETH_ADDRESS    → your Ethereum/USDT wallet address
+#   SOL_ADDRESS    → your Solana wallet address
+#   LTC_ADDRESS    → your Litecoin wallet address
+#   CONSOLE_CHAT_ID → your console group e.g. @hostingceobotl
 # ─────────────────────────────────────────
 TOKEN          = os.environ.get("BOT_TOKEN")
 ADMIN_USERNAME = "@hostingCE0"
 ADMIN_CHAT_ID  = os.environ.get("ADMIN_CHAT_ID", "")
+CONSOLE_CHAT   = os.environ.get("CONSOLE_CHAT_ID", "@hostingceobotl")
 BTC_ADDRESS    = os.environ.get("BTC_ADDRESS", "YOUR_BTC_ADDRESS")
-ETH_ADDRESS    = os.environ.get("ETH_ADDRESS", "YOUR_ETH_USDT_ADDRESS")
+ETH_ADDRESS    = os.environ.get("ETH_ADDRESS", "YOUR_ETH_ADDRESS")
 SOL_ADDRESS    = os.environ.get("SOL_ADDRESS", "YOUR_SOL_ADDRESS")
 LTC_ADDRESS    = os.environ.get("LTC_ADDRESS", "YOUR_LTC_ADDRESS")
 
 WALLET_ADDRESSES = {
-    "Bitcoin (BTC)":        BTC_ADDRESS,
+    "Bitcoin (BTC)":         BTC_ADDRESS,
     "Ethereum (ETH) / USDT": ETH_ADDRESS,
-    "Solana (SOL)":         SOL_ADDRESS,
-    "Litecoin (LTC)":       LTC_ADDRESS,
+    "Solana (SOL)":          SOL_ADDRESS,
+    "Litecoin (LTC)":        LTC_ADDRESS,
 }
-
 TOPUP_TOKENS  = list(WALLET_ADDRESSES.keys())
 TOPUP_AMOUNTS = [50, 80, 120, 150, 180, 220, 245, 260, 300, 350, 500, 800, 1000, 1500]
 
@@ -44,13 +44,12 @@ EMAIL_COUNTRIES = [
     "GERMANY", "HUNGARY", "ITALY", "SPAIN", "UK", "USA"
 ]
 EMAIL_PROVIDERS = ["Business", "Crypto", "Gaming", "Music", "Shopping", "Social Media"]
-EMAIL_PRICES    = {"1k": 5, "5k": 15, "10k": 20, "25k": 50, "30k": 90, "75k": 130}
-
+EMAIL_PRICES    = {"1k": 90, "5k": 300, "10k": 450, "25k": 800, "30k": 900, "75k": 1500}
 EMAIL_PRICE_LIST = """📋 *Email Leads Price List*
-1k — £5 | 5k — £15 | 10k — £20
-25k — £50 | 50k — £90 | 75k — £130
-100k — £170 | 250k — £250 | 500k — £450
-750k — £650 | 1M — £775
+1k — £90 | 5k — £300 | 10k — £450
+25k — £800 | 50k — £900 | 75k — £1500
+100k — £2700 | 250k — £4200 | 500k — £7500
+750k — £10000 | 1M — £14000
 1M+ — Message {admin}"""
 
 # ─────────────────────────────────────────
@@ -127,8 +126,7 @@ SMS_PRICE_LIST = """📋 *SMS Leads Price List*
 15k — £240 | 20k — £300 | 25k — £360
 30k — £440 | 35k — £490 | 40k — £520
 45k — £540 | 50k — £560 | 100k — £700
-200k — £1000 | 500k — £1600
-1M+ — Message {admin}"""
+200k — £1000 | 500k — £1600 | 1M+ — Message {admin}"""
 
 # ─────────────────────────────────────────
 # CRYPTO LEADS DATA
@@ -150,35 +148,57 @@ FAQ_TEXT = """❓ *Frequently Asked Questions*
 2\. Click 'Wallet'
 3\. Select 'Top Up'
 4\. Select the amount you wish to top up
-5\. Click the link provided or manually send the amount\. Priority transactions are received quicker\.
+5\. Send the crypto to the address shown\. Priority transactions are received quicker\.
 
-📝 *Note:* You will be credited at 1 BTC confirmation & 6 ETH confirmations\.
+📝 *Note:* Credited at 1 BTC confirmation & 6 ETH confirmations\.
 
 ━━━━━━━━━━━━━━━━━━━━
 *How do I receive my leads?*
-Once you have topped up, please continue to select the leads you want and the network\. The bot will send your files instantly\!
+Once topped up, select the leads you want and the network\. The bot will send your files instantly\!
 
 ━━━━━━━━━━━━━━━━━━━━
 *Did you encounter a bad batch?*
-Please private message {admin2} to get this resolved\. We take care of our customers & want to make sure they are treated with the respect they deserve\!
+Please private message {admin} to get this resolved\. We take care of our customers\!
 
 ━━━━━━━━━━━━━━━━━━━━
 *Interested in bulk orders?*
-If your requested amount is larger than 50k, please contact {admin2} directly so he may discuss further private discounts\. You will get leads at very close to cost price\. This is for bulk buyers only\!
+If your requested amount is larger than 50k, contact {admin} directly for private discounts\. Bulk buyers only\!
 
 ━━━━━━━━━━━━━━━━━━━━
 *Would you like to request a custom country?*
-If you desire a country or prefix that we do not have on the bot, please provide the country name/prefix to {admin2}\.
-📝 *Note:* Orders may take up to 24 hours, sometimes quicker depending on how busy it is\.
+Provide the country name/prefix to {admin}\.
+📝 *Note:* Orders may take up to 24 hours\.
 
 ━━━━━━━━━━━━━━━━━━━━
 *Do we condone malicious behaviour?*
-We absolutely & 100% do NOT support this behaviour\. We are entirely against it\. If you are using it for malicious behaviour, you will be blocked and banned from using our services\."""
+Absolutely NOT\. If you use our products for malicious behaviour, you will be blocked and banned\."""
+
+# ─────────────────────────────────────────
+# CONSOLE LOGGER
+# ─────────────────────────────────────────
+async def console_log(context, user, action: str, detail: str = ""):
+    try:
+        msg = (
+            f"🖥 *CONSOLE LOG*\n"
+            f"━━━━━━━━━━━━━━━━\n"
+            f"👤 [{user.first_name}](tg://user?id={user.id})"
+            f" | @{user.username or 'no_username'}\n"
+            f"🆔 `{user.id}`\n"
+            f"🔘 *Action:* {action}\n"
+        )
+        if detail:
+            msg += f"📋 *Detail:* {detail}"
+        await context.bot.send_message(
+            chat_id=CONSOLE_CHAT,
+            text=msg,
+            parse_mode="Markdown"
+        )
+    except Exception as e:
+        logger.error(f"Console log error: {e}")
 
 # ─────────────────────────────────────────
 # KEYBOARD HELPERS
 # ─────────────────────────────────────────
-
 def make_grid(items, callback_prefix, cols=2, back_callback="main_menu"):
     buttons, row = [], []
     for item in items:
@@ -191,24 +211,23 @@ def make_grid(items, callback_prefix, cols=2, back_callback="main_menu"):
     buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=back_callback)])
     return InlineKeyboardMarkup(buttons)
 
-
 def main_menu_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("📧 Email Leads", callback_data="email_leads"),
          InlineKeyboardButton("📱 SMS Leads",   callback_data="sms_leads")],
         [InlineKeyboardButton("💰 Crypto Leads", callback_data="crypto_leads")],
-        [InlineKeyboardButton("👛 Wallet", callback_data="wallet"),
-         InlineKeyboardButton("❓ FAQ",    callback_data="faq")],
+        [InlineKeyboardButton("👛 Wallet",       callback_data="wallet"),
+         InlineKeyboardButton("❓ FAQ",          callback_data="faq")],
     ])
 
 # ─────────────────────────────────────────
 # HANDLERS
 # ─────────────────────────────────────────
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if "balance" not in context.user_data:
         context.user_data["balance"] = 0
+    await console_log(context, user, "▶️ /start")
     if not context.user_data.get("tos_accepted"):
         await update.message.reply_text(
             "📜 *Terms of Service*\n\n"
@@ -222,33 +241,45 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await send_welcome(update.message, context)
 
-
 async def send_welcome(msg, context):
     balance = context.user_data.get("balance", 0)
-    admin   = ADMIN_USERNAME
     await msg.reply_text(
-        f"Welcome to {admin}!\n\n"
+        f"Welcome to {ADMIN_USERNAME}!\n\n"
         "Tap 'Leads' to purchase leads.\n"
-        "Tap 'Wallet' to view your balance and top up your wallet, in order to purchase leads.\n"
-        "Tap 'FAQs' for a list of Frequently Asked Questions.\n\n"
+        "Tap 'Wallet' to view your balance and top up your wallet.\n"
+        "Tap 'FAQs' for Frequently Asked Questions.\n\n"
         "We do not condone any illegal or illicit behaviour with the product we sell.\n\n"
         f"💰 *Current Balance: £{balance}*",
         parse_mode="Markdown",
         reply_markup=main_menu_keyboard()
     )
 
+async def show_tos(query):
+    await query.edit_message_text(
+        "📜 *Terms of Service*\n\n"
+        "Do you agree to not use the products we provide for illegal or malicious intent?",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ Accept",  callback_data="order_tos_accept")],
+            [InlineKeyboardButton("❌ Decline", callback_data="main_menu")],
+        ])
+    )
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query   = update.callback_query
     await query.answer()
     data    = query.data
     balance = context.user_data.get("balance", 0)
-    admin   = ADMIN_USERNAME
     user    = query.from_user
+    admin   = ADMIN_USERNAME
+
+    # Log every button tap to console
+    await console_log(context, user, f"🔘 Button: `{data}`")
 
     # ── TOS ──
     if data == "tos_accept":
         context.user_data["tos_accepted"] = True
+        await console_log(context, user, "✅ Accepted Terms of Service")
         await query.edit_message_text(
             f"Welcome to {admin}!\n\n"
             "Tap 'Leads' to purchase leads.\n"
@@ -259,7 +290,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             reply_markup=main_menu_keyboard()
         )
+
     elif data == "tos_decline":
+        await console_log(context, user, "❌ Declined Terms of Service")
         await query.edit_message_text("❌ You must accept the Terms of Service.\n\nSend /start to try again.")
 
     # ── MAIN MENU ──
@@ -279,8 +312,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"You currently have £{balance} in your wallet.\n\n"
             "To add more please click on 'Top Up' and select the amount you would like to add to your wallet.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("💳 Top Up",  callback_data="topup_select_token")],
-                [InlineKeyboardButton("⬅️ Back",    callback_data="main_menu")],
+                [InlineKeyboardButton("💳 Top Up", callback_data="topup_select_token")],
+                [InlineKeyboardButton("⬅️ Back",   callback_data="main_menu")],
             ])
         )
 
@@ -293,9 +326,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("topup_token:"):
         token = data.split(":", 1)[1]
         context.user_data["topup_token"] = token
-        short = token.split("(")[1].replace(")", "").replace(" / USDT", "").strip() if "(" in token else token
+        short = token.split("(")[1].split(")")[0].split("/")[0].strip() if "(" in token else token
+        await console_log(context, user, "💳 Top Up — Token Selected", token)
         await query.edit_message_text(
-            f"Select topup amount ({short.split('/')[0].strip()}):",
+            f"Select topup amount ({short}):",
             reply_markup=make_grid(
                 [f"£{a}" for a in TOPUP_AMOUNTS],
                 "topup_amount", cols=2, back_callback="topup_select_token"
@@ -303,17 +337,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data.startswith("topup_amount:"):
-        amount_str = data.split(":", 1)[1]          # e.g. "£800"
+        amount_str = data.split(":", 1)[1]
         amount_val = int(amount_str.replace("£", ""))
         token      = context.user_data.get("topup_token", "N/A")
         address    = WALLET_ADDRESSES.get(token, "N/A")
-        short      = token.split("(")[1].replace(")", "").strip() if "(" in token else token
-
-        context.user_data["pending_topup"] = {"token": token, "amount": amount_val, "address": address}
-
+        short      = token.split("(")[1].split(")")[0].strip() if "(" in token else token
+        context.user_data["pending_topup"] = {"token": token, "amount": amount_val}
+        await console_log(context, user, "💳 Top Up — Amount Selected", f"£{amount_val} via {token}")
         await query.edit_message_text(
             f"A new charge of £{amount_val} has been created.\n\n"
-            f"Please send {short} to the address below to top up.\n\n"
+            f"Please send {short} to the address below to top up:\n\n"
             f"`{address}`\n\n"
             "The amount will be added to your wallet balance once the required confirmations have been reached.",
             parse_mode="Markdown",
@@ -326,29 +359,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("topup_paid:"):
         amount_val = int(data.split(":", 1)[1])
         topup      = context.user_data.get("pending_topup", {})
-
+        await console_log(context, user, "💳 Top Up — Payment Submitted", f"£{amount_val} via {topup.get('token','N/A')}")
         await query.edit_message_text(
             f"✅ *Top-Up Request Submitted!*\n\n"
             f"Amount: £{amount_val}\n"
             f"Token: {topup.get('token', 'N/A')}\n\n"
-            "Your balance will be updated once payment is confirmed by our team.\n"
+            "Your balance will be updated once payment is confirmed.\n"
             f"Contact {admin} if you have any questions.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]])
         )
-
-        # Notify admin
         if ADMIN_CHAT_ID:
             try:
                 await context.bot.send_message(
                     chat_id=ADMIN_CHAT_ID,
                     text=(
                         f"💳 *TOP-UP REQUEST*\n\n"
-                        f"👤 User: [{user.first_name}](tg://user?id={user.id})\n"
-                        f"🆔 ID: `{user.id}`\n"
-                        f"💰 Amount: £{amount_val}\n"
-                        f"🪙 Token: {topup.get('token', 'N/A')}\n\n"
-                        f"Use /addbalance {user.id} {amount_val} to credit their account after verification."
+                        f"👤 [{user.first_name}](tg://user?id={user.id})\n"
+                        f"🆔 `{user.id}`\n"
+                        f"💰 £{amount_val}\n"
+                        f"🪙 {topup.get('token','N/A')}\n\n"
+                        f"Use /addbalance {user.id} {amount_val} to credit after verification."
                     ),
                     parse_mode="Markdown"
                 )
@@ -371,6 +402,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("email_country:"):
         country = data.split(":", 1)[1]
         context.user_data["email_country"] = country
+        await console_log(context, user, "📧 Email — Country", country)
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n\nPlease select a provider:",
             parse_mode="Markdown",
@@ -381,9 +413,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         provider = data.split(":", 1)[1]
         context.user_data["email_provider"] = provider
         country  = context.user_data.get("email_country", "N/A")
+        await console_log(context, user, "📧 Email — Provider", provider)
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n🏢 *Provider:* {provider}\n\n"
-            "📦 Please select the amount of leads you want to purchase:",
+            "📦 Please select the amount:",
             parse_mode="Markdown",
             reply_markup=make_grid(
                 [f"{k} - £{v}" for k, v in EMAIL_PRICES.items()],
@@ -401,6 +434,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "provider": context.user_data.get("email_provider", "N/A"),
             "amount": amount, "price": price
         }
+        await console_log(context, user, "📧 Email — Amount", f"{amount} (£{price})")
         await show_tos(query)
 
     # ══════════════════════════════════════
@@ -416,9 +450,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data.startswith("sms_country:"):
-        country = data.split(":", 1)[1]
+        country  = data.split(":", 1)[1]
         context.user_data["sms_country"] = country
         carriers = SMS_CARRIERS.get(country, [])
+        await console_log(context, user, "📱 SMS — Country", country)
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n\n📡 Please select a carrier:",
             parse_mode="Markdown",
@@ -429,9 +464,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         carrier = data.split(":", 1)[1]
         context.user_data["sms_carrier"] = carrier
         country = context.user_data.get("sms_country", "N/A")
+        await console_log(context, user, "📱 SMS — Carrier", carrier)
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n📡 *Carrier:* {carrier}\n\n"
-            "📦 Please select the amount of leads you want to purchase:",
+            "📦 Please select the amount:",
             parse_mode="Markdown",
             reply_markup=make_grid(
                 [f"{k} - £{v}" for k, v in SMS_PRICES.items() if k in SMS_AMOUNTS],
@@ -449,6 +485,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "carrier": context.user_data.get("sms_carrier", "N/A"),
             "amount": amount, "price": price
         }
+        await console_log(context, user, "📱 SMS — Amount", f"{amount} (£{price})")
         await show_tos(query)
 
     # ══════════════════════════════════════
@@ -464,9 +501,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("crypto_exchange:"):
         exchange = data.split(":", 1)[1]
         context.user_data["crypto_exchange"] = exchange
+        await console_log(context, user, "💰 Crypto — Exchange", exchange)
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n🏦 *Exchange:* {exchange}\n\n"
-            "📦 Please select the amount of leads you want to purchase:",
+            "📦 Please select the amount:",
             parse_mode="Markdown",
             reply_markup=make_grid(
                 [f"{k} - £{v}" for k, v in CRYPTO_PRICES.items()],
@@ -483,9 +521,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "provider": context.user_data.get("crypto_exchange", "N/A"),
             "amount": amount, "price": price
         }
+        await console_log(context, user, "💰 Crypto — Amount", f"{amount} (£{price})")
         await show_tos(query)
 
-    # ── ORDER TOS ──
+    # ── ORDER TOS ACCEPT ──
     elif data == "order_tos_accept":
         order = context.user_data.get("pending_order", {})
         if not order:
@@ -493,6 +532,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Menu", callback_data="main_menu")]]))
             return
         provider_label = order.get("provider", order.get("carrier", "N/A"))
+        await console_log(context, user, "✅ ToS Accepted — Order Confirmed",
+            f"{order.get('type')} | {order.get('country')} | {provider_label} | {order.get('amount')} | £{order.get('price')}")
         await query.edit_message_text(
             f"🛒 *Purchase Confirmation*\n\n"
             f"Country: {order.get('country')}\n"
@@ -507,7 +548,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ])
         )
 
-    # ── ORDER CONFIRM (balance check) ──
+    # ── FINAL PURCHASE ──
     elif data == "order_confirm":
         order   = context.user_data.get("pending_order", {})
         price   = order.get("price", 0)
@@ -517,21 +558,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Menu", callback_data="main_menu")]]))
             return
         if balance < price:
+            await console_log(context, user, "❌ Purchase Failed — Insufficient Balance",
+                f"Balance: £{balance} | Required: £{price}")
             await query.edit_message_text(
                 "❌PLEASE TOP UP YOUR ACCOUNT❌\n\n"
                 f"Your balance is £{balance} but this order costs £{price}.\n\n"
                 f"Go to Wallet → Top Up to add funds.",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("👛 Wallet",        callback_data="wallet")],
-                    [InlineKeyboardButton("⬅️ Back to Menu",  callback_data="main_menu")],
+                    [InlineKeyboardButton("👛 Wallet",       callback_data="wallet")],
+                    [InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")],
                 ])
             )
             return
 
         provider_label = order.get("provider", order.get("carrier", "N/A"))
-        # Deduct balance
         context.user_data["balance"] = balance - price
-
+        await console_log(context, user, "✅ Purchase Complete",
+            f"{order.get('type')} | {order.get('country')} | {provider_label} | {order.get('amount')} | £{price}")
         await query.edit_message_text(
             f"✅ *Order Confirmed!*\n\n"
             f"📋 Type: {order.get('type')}\n"
@@ -545,8 +588,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]])
         )
-
-        # Notify admin
         if ADMIN_CHAT_ID:
             try:
                 await context.bot.send_message(
@@ -559,7 +600,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         f"🌍 {order.get('country')}\n"
                         f"🏢 {provider_label}\n"
                         f"📦 {order.get('amount')}\n"
-                        f"💷 £{price} (paid from wallet)"
+                        f"💷 £{price}"
                     ),
                     parse_mode="Markdown"
                 )
@@ -570,55 +611,102 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── FAQ ──
     elif data == "faq":
         await query.edit_message_text(
-            FAQ_TEXT.format(admin=admin, admin2=admin),
+            FAQ_TEXT.format(admin=admin),
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
         )
 
-
-async def show_tos(query):
-    await query.edit_message_text(
-        "📜 *Terms of Service*\n\n"
-        "Do you agree to not use the products we provide for illegal or malicious intent?",
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ Accept",  callback_data="order_tos_accept")],
-            [InlineKeyboardButton("❌ Decline", callback_data="main_menu")],
-        ])
+# ─────────────────────────────────────────
+# ADMIN COMMANDS
+# ─────────────────────────────────────────
+async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat = update.effective_chat
+    await update.message.reply_text(
+        f"Chat ID: `{chat.id}`\nType: {chat.type}\nTitle: {getattr(chat, 'title', 'N/A')}",
+        parse_mode="Markdown"
     )
 
-
-# ─────────────────────────────────────────
-# ADMIN COMMAND: /addbalance <user_id> <amount>
-# Only works if sent by admin
-# ─────────────────────────────────────────
 async def add_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
         return
     try:
         target_id = int(context.args[0])
         amount    = int(context.args[1])
-        # Store in bot_data keyed by user id
         if "balances" not in context.bot_data:
             context.bot_data["balances"] = {}
         context.bot_data["balances"][target_id] = \
             context.bot_data["balances"].get(target_id, 0) + amount
-        await update.message.reply_text(f"✅ Added £{amount} to user {target_id}.")
+        await update.message.reply_text(f"✅ Added £{amount} to user `{target_id}`.", parse_mode="Markdown")
         await context.bot.send_message(
             chat_id=target_id,
-            text=f"✅ £{amount} has been added to your wallet!\n\nYour new balance is £{context.bot_data['balances'][target_id]}."
+            text=f"✅ *£{amount} has been added to your wallet!*\n\nYour new balance is £{context.bot_data['balances'][target_id]}.",
+            parse_mode="Markdown"
         )
+        await console_log(context, update.effective_user, "💰 Admin — Balance Added", f"£{amount} to user {target_id}")
     except Exception as e:
         await update.message.reply_text(f"Usage: /addbalance <user_id> <amount>\nError: {e}")
 
+async def remove_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+        return
+    try:
+        target_id = int(context.args[0])
+        amount    = int(context.args[1])
+        if "balances" not in context.bot_data:
+            context.bot_data["balances"] = {}
+        current = context.bot_data["balances"].get(target_id, 0)
+        context.bot_data["balances"][target_id] = max(0, current - amount)
+        await update.message.reply_text(f"✅ Removed £{amount} from user `{target_id}`.", parse_mode="Markdown")
+        await console_log(context, update.effective_user, "💰 Admin — Balance Removed", f"£{amount} from user {target_id}")
+    except Exception as e:
+        await update.message.reply_text(f"Usage: /removebalance <user_id> <amount>\nError: {e}")
+
+async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+        return
+    try:
+        target_id = int(context.args[0])
+        bal = context.bot_data.get("balances", {}).get(target_id, 0)
+        await update.message.reply_text(f"💰 User `{target_id}` balance: £{bal}", parse_mode="Markdown")
+    except Exception as e:
+        await update.message.reply_text(f"Usage: /checkbalance <user_id>\nError: {e}")
+
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+        return
+    msg = " ".join(context.args)
+    if not msg:
+        await update.message.reply_text("Usage: /broadcast <message>")
+        return
+    await update.message.reply_text(f"📢 Broadcast sent: {msg}")
+    await console_log(context, update.effective_user, "📢 Admin — Broadcast", msg)
+
+async def admin_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+        return
+    await update.message.reply_text(
+        "🛠 *Admin Commands*\n\n"
+        "/addbalance `<user_id>` `<amount>` — Add balance to user\n"
+        "/removebalance `<user_id>` `<amount>` — Remove balance from user\n"
+        "/checkbalance `<user_id>` — Check user balance\n"
+        "/broadcast `<message>` — Log a broadcast message\n"
+        "/getid — Get current chat ID\n"
+        "/adminhelp — Show this menu",
+        parse_mode="Markdown"
+    )
 
 # ─────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────
 def main():
     app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("addbalance", add_balance))
+    app.add_handler(CommandHandler("start",         start))
+    app.add_handler(CommandHandler("getid",         get_id))
+    app.add_handler(CommandHandler("addbalance",    add_balance))
+    app.add_handler(CommandHandler("removebalance", remove_balance))
+    app.add_handler(CommandHandler("checkbalance",  check_balance))
+    app.add_handler(CommandHandler("broadcast",     broadcast))
+    app.add_handler(CommandHandler("adminhelp",     admin_help))
     app.add_handler(CallbackQueryHandler(button_handler))
     logger.info("Bot is running...")
     app.run_polling()
