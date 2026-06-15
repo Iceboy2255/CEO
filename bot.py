@@ -178,21 +178,11 @@ Absolutely NOT\. If you use our products for malicious behaviour, you will be bl
 # ─────────────────────────────────────────
 async def console_log(context, user, action: str, detail: str = ""):
     try:
-        msg = (
-            f"🖥 *CONSOLE LOG*\n"
-            f"━━━━━━━━━━━━━━━━\n"
-            f"👤 [{user.first_name}](tg://user?id={user.id})"
-            f" | @{user.username or 'no_username'}\n"
-            f"🆔 `{user.id}`\n"
-            f"🔘 *Action:* {action}\n"
-        )
+        username = f"@{user.username}" if user.username else user.first_name
+        msg = f"{username} ({user.id}) {action}"
         if detail:
-            msg += f"📋 *Detail:* {detail}"
-        await context.bot.send_message(
-            chat_id=CONSOLE_CHAT,
-            text=msg,
-            parse_mode="Markdown"
-        )
+            msg += f" — {detail}"
+        await context.bot.send_message(chat_id=CONSOLE_CHAT, text=msg)
     except Exception as e:
         logger.error(f"Console log error: {e}")
 
@@ -227,7 +217,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if "balance" not in context.user_data:
         context.user_data["balance"] = 0
-    await console_log(context, user, "▶️ /start")
+    await console_log(context, user, "opened the bot")
     if not context.user_data.get("tos_accepted"):
         await update.message.reply_text(
             "📜 *Terms of Service*\n\n"
@@ -274,12 +264,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admin   = ADMIN_USERNAME
 
     # Log every button tap to console
-    await console_log(context, user, f"🔘 Button: `{data}`")
+    
 
     # ── TOS ──
     if data == "tos_accept":
         context.user_data["tos_accepted"] = True
-        await console_log(context, user, "✅ Accepted Terms of Service")
+        await console_log(context, user, "accepted the Terms of Service")
         await query.edit_message_text(
             f"Welcome to {admin}!\n\n"
             "Tap 'Leads' to purchase leads.\n"
@@ -292,7 +282,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "tos_decline":
-        await console_log(context, user, "❌ Declined Terms of Service")
+        await console_log(context, user, "declined the Terms of Service")
         await query.edit_message_text("❌ You must accept the Terms of Service.\n\nSend /start to try again.")
 
     # ── MAIN MENU ──
@@ -327,7 +317,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         token = data.split(":", 1)[1]
         context.user_data["topup_token"] = token
         short = token.split("(")[1].split(")")[0].split("/")[0].strip() if "(" in token else token
-        await console_log(context, user, "💳 Top Up — Token Selected", token)
+        await console_log(context, user, "is topping up with", token)
         await query.edit_message_text(
             f"Select topup amount ({short}):",
             reply_markup=make_grid(
@@ -343,7 +333,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         address    = WALLET_ADDRESSES.get(token, "N/A")
         short      = token.split("(")[1].split(")")[0].strip() if "(" in token else token
         context.user_data["pending_topup"] = {"token": token, "amount": amount_val}
-        await console_log(context, user, "💳 Top Up — Amount Selected", f"£{amount_val} via {token}")
+        await console_log(context, user, f"selected top up amount £{amount_val} via {token}")
         await query.edit_message_text(
             f"A new charge of £{amount_val} has been created.\n\n"
             f"Please send {short} to the address below to top up:\n\n"
@@ -359,7 +349,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("topup_paid:"):
         amount_val = int(data.split(":", 1)[1])
         topup      = context.user_data.get("pending_topup", {})
-        await console_log(context, user, "💳 Top Up — Payment Submitted", f"£{amount_val} via {topup.get('token','N/A')}")
+        await console_log(context, user, f"submitted top up payment of £{amount_val}")
         await query.edit_message_text(
             f"✅ *Top-Up Request Submitted!*\n\n"
             f"Amount: £{amount_val}\n"
@@ -402,7 +392,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("email_country:"):
         country = data.split(":", 1)[1]
         context.user_data["email_country"] = country
-        await console_log(context, user, "📧 Email — Country", country)
+        await console_log(context, user, f"selected Email Leads — country: {country}")
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n\nPlease select a provider:",
             parse_mode="Markdown",
@@ -413,7 +403,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         provider = data.split(":", 1)[1]
         context.user_data["email_provider"] = provider
         country  = context.user_data.get("email_country", "N/A")
-        await console_log(context, user, "📧 Email — Provider", provider)
+        await console_log(context, user, f"selected Email Leads — provider: {provider}")
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n🏢 *Provider:* {provider}\n\n"
             "📦 Please select the amount:",
@@ -434,7 +424,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "provider": context.user_data.get("email_provider", "N/A"),
             "amount": amount, "price": price
         }
-        await console_log(context, user, "📧 Email — Amount", f"{amount} (£{price})")
+        await console_log(context, user, f"is ordering {amount} Email Leads for £{price}")
         await show_tos(query)
 
     # ══════════════════════════════════════
@@ -453,7 +443,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         country  = data.split(":", 1)[1]
         context.user_data["sms_country"] = country
         carriers = SMS_CARRIERS.get(country, [])
-        await console_log(context, user, "📱 SMS — Country", country)
+        await console_log(context, user, f"selected SMS Leads — country: {country}")
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n\n📡 Please select a carrier:",
             parse_mode="Markdown",
@@ -464,7 +454,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         carrier = data.split(":", 1)[1]
         context.user_data["sms_carrier"] = carrier
         country = context.user_data.get("sms_country", "N/A")
-        await console_log(context, user, "📱 SMS — Carrier", carrier)
+        await console_log(context, user, f"selected SMS Leads — carrier: {carrier}")
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n📡 *Carrier:* {carrier}\n\n"
             "📦 Please select the amount:",
@@ -485,7 +475,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "carrier": context.user_data.get("sms_carrier", "N/A"),
             "amount": amount, "price": price
         }
-        await console_log(context, user, "📱 SMS — Amount", f"{amount} (£{price})")
+        await console_log(context, user, f"is ordering {amount} SMS Leads for £{price}")
         await show_tos(query)
 
     # ══════════════════════════════════════
@@ -501,7 +491,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("crypto_exchange:"):
         exchange = data.split(":", 1)[1]
         context.user_data["crypto_exchange"] = exchange
-        await console_log(context, user, "💰 Crypto — Exchange", exchange)
+        await console_log(context, user, f"selected Crypto Leads — exchange: {exchange}")
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n🏦 *Exchange:* {exchange}\n\n"
             "📦 Please select the amount:",
@@ -521,7 +511,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "provider": context.user_data.get("crypto_exchange", "N/A"),
             "amount": amount, "price": price
         }
-        await console_log(context, user, "💰 Crypto — Amount", f"{amount} (£{price})")
+        await console_log(context, user, f"is ordering {amount} Crypto Leads for £{price}")
         await show_tos(query)
 
     # ── ORDER TOS ACCEPT ──
@@ -642,7 +632,7 @@ async def add_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text=f"✅ *£{amount} has been added to your wallet!*\n\nYour new balance is £{context.bot_data['balances'][target_id]}.",
             parse_mode="Markdown"
         )
-        await console_log(context, update.effective_user, "💰 Admin — Balance Added", f"£{amount} to user {target_id}")
+        await console_log(context, update.effective_user, f"added £{amount} to user {target_id}")
     except Exception as e:
         await update.message.reply_text(f"Usage: /addbalance <user_id> <amount>\nError: {e}")
 
@@ -657,7 +647,7 @@ async def remove_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         current = context.bot_data["balances"].get(target_id, 0)
         context.bot_data["balances"][target_id] = max(0, current - amount)
         await update.message.reply_text(f"✅ Removed £{amount} from user `{target_id}`.", parse_mode="Markdown")
-        await console_log(context, update.effective_user, "💰 Admin — Balance Removed", f"£{amount} from user {target_id}")
+        await console_log(context, update.effective_user, f"removed £{amount} from user {target_id}")
     except Exception as e:
         await update.message.reply_text(f"Usage: /removebalance <user_id> <amount>\nError: {e}")
 
