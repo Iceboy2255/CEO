@@ -598,14 +598,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ─────────────────────────────────────────
 # ADMIN COMMANDS
 # ─────────────────────────────────────────
-async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def is_admin(update: Update, context) -> bool:
+    user_id = str(update.effective_user.id)
+    chat_id = str(update.effective_chat.id)
+    return user_id == str(ADMIN_CHAT_ID) or chat_id == str(CONSOLE_CHAT)
     chat = update.effective_chat
     await update.message.reply_text(
         f"Chat ID: {chat.id}\nType: {chat.type}\nTitle: {getattr(chat, 'title', 'N/A')}"
     )
 
 async def add_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+    if not is_admin(update, context):
         return
     try:
         target_id = int(context.args[0])
@@ -638,7 +641,7 @@ async def add_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Usage: /addbalance <user_id> <amount>\nError: {e}")
 
 async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+    if not is_admin(update, context):
         return
     try:
         target_id = int(context.args[0])
@@ -674,7 +677,7 @@ async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Usage: /userbal <user_id> <amount> pass\nError: {e}")
 
 async def remove_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+    if not is_admin(update, context):
         return
     try:
         target_id = int(context.args[0])
@@ -689,7 +692,7 @@ async def remove_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Usage: /removebalance <user_id> <amount>\nError: {e}")
 
 async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+    if not is_admin(update, context):
         return
     try:
         target_id = int(context.args[0])
@@ -699,7 +702,7 @@ async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Usage: /checkbalance <user_id>\nError: {e}")
 
 async def admin_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+    if not is_admin(update, context):
         return
     await update.message.reply_text(
         "Admin Commands:\n\n"
