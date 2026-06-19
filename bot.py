@@ -359,6 +359,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]])
         )
+        # Check if balance after top up is below £100 and nudge user
+        new_balance = context.user_data.get("balance", 0) + amount_val
+        if new_balance < 100:
+            remaining = 100 - new_balance
+            await context.bot.send_message(
+                chat_id=user.id,
+                text=f"First time users are required to have a balance of minimum £100, you currently have £{new_balance}"
+            )
         if ADMIN_CHAT_ID:
             try:
                 await context.bot.send_message(
@@ -626,17 +634,61 @@ async def add_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.bot_data["balances"] = {}
         context.bot_data["balances"][target_id] = \
             context.bot_data["balances"].get(target_id, 0) + amount
+        new_balance = context.bot_data["balances"][target_id]
         await update.message.reply_text(f"✅ Added £{amount} to user `{target_id}`.", parse_mode="Markdown")
-        await context.bot.send_message(
-            chat_id=target_id,
-            text=f"✅ *£{amount} has been added to your wallet!*\n\nYour new balance is £{context.bot_data['balances'][target_id]}.",
-            parse_mode="Markdown"
-        )
+        if new_balance < 100:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=f"First time users are required to have a balance of minimum £100, you currently have £{new_balance}"
+            )
+        else:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=f"✅ £{amount} has been added to your wallet! Your new balance is £{new_balance}."
+            )
         await console_log(context, update.effective_user, f"added £{amount} to user {target_id}")
     except Exception as e:
         await update.message.reply_text(f"Usage: /addbalance <user_id> <amount>\nError: {e}")
 
-async def remove_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
+        return
+    try:
+        target_id = int(context.args[0])
+        amount    = int(context.args[1])
+        # context.args[2] is the "pass" keyword — just confirms the command
+        if len(context.args) < 3 or context.args[2] != "pass":
+            await update.message.reply_text("Usage: /userbal <user_id> <amount> pass")
+            return
+        if "balances" not in context.bot_data:
+            context.bot_data["balances"] = {}
+        context.bot_data["balances"][target_id] = \
+            context.bot_data["balances"].get(target_id, 0) + amount
+        new_balance = context.bot_data["balances"][target_id]
+        await update.message.reply_text(f"✅ Added £{amount} to user `{target_id}`. New balance: £{new_balance}", parse_mode="Markdown")
+
+        if new_balance < 100:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=(
+                    f"✅ £{amount} has been added to your wallet!\n\n"
+                    f"First time users are required to have a balance of minimum £100, "
+                    f"you currently have £{new_balance}."
+                )
+            )
+        else:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=(
+                    f"✅ £{amount} has been added to your wallet!\n\n"
+                    f"Your current balance is £{new_balance}. You're ready to purchase!"
+                )
+            )
+        await console_log(context, update.effective_user, f"credited £{amount} to user {target_id} via /userbal")
+    except Exception as e:
+        await update.message.reply_text(f"Usage: /userbal <user_id> <amount> pass\nError: {e}")
+
+
     if str(update.effective_user.id) != str(ADMIN_CHAT_ID):
         return
     try:
@@ -693,6 +745,7 @@ def main():
     app.add_handler(CommandHandler("start",         start))
     app.add_handler(CommandHandler("getid",         get_id))
     app.add_handler(CommandHandler("addbalance",    add_balance))
+    app.add_handler(CommandHandler("userbal",       userbal))
     app.add_handler(CommandHandler("removebalance", remove_balance))
     app.add_handler(CommandHandler("checkbalance",  check_balance))
     app.add_handler(CommandHandler("broadcast",     broadcast))
