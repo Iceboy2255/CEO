@@ -1,24 +1,12 @@
 import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application, CommandHandler, CallbackQueryHandler, ContextTypes
-)
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────
-# RAILWAY VARIABLES
-#   BOT_TOKEN        -> token from @BotFather
-#   ADMIN_CHAT_ID    -> your numeric ID from @userinfobot
-#   CONSOLE_CHAT_ID  -> your console group ID
-#   BTC_ADDRESS      -> your Bitcoin wallet address
-#   ETH_ADDRESS      -> your Ethereum/USDT wallet address
-#   SOL_ADDRESS      -> your Solana wallet address
-#   LTC_ADDRESS      -> your Litecoin wallet address
-# ─────────────────────────────────────────
-TOKEN          = os.environ.get("BOT_TOKEN")
+TOKEN         = os.environ.get("BOT_TOKEN")
 ADMIN_USERNAME = "@hostingCE0"
 ADMIN_CHAT_ID  = os.environ.get("ADMIN_CHAT_ID", "")
 CONSOLE_CHAT   = os.environ.get("CONSOLE_CHAT_ID", "")
@@ -36,147 +24,106 @@ WALLET_ADDRESSES = {
 TOPUP_TOKENS  = list(WALLET_ADDRESSES.keys())
 TOPUP_AMOUNTS = [50, 80, 120, 150, 180, 220, 245, 260, 300, 350, 500, 800, 1000, 1500]
 
-# ─────────────────────────────────────────
-# EMAIL DATA
-# ─────────────────────────────────────────
-EMAIL_COUNTRIES = [
-    "AUSTRALIA", "BRAZIL", "CANADA", "FRANCE",
-    "GERMANY", "HUNGARY", "ITALY", "SPAIN", "UK", "USA"
-]
-EMAIL_PROVIDERS = ["Business", "Crypto", "Gaming", "Music", "Shopping", "Social Media"]
-EMAIL_PRICES    = {"1k": 90, "5k": 300, "10k": 450, "25k": 800, "30k": 900, "75k": 1500}
-EMAIL_PRICE_LIST = (
-    "📋 *Email Leads Price List*\n"
+EMAIL_COUNTRIES = ["AUSTRALIA","BRAZIL","CANADA","FRANCE","GERMANY","HUNGARY","ITALY","SPAIN","UK","USA"]
+EMAIL_PROVIDERS = ["Business","Crypto","Gaming","Music","Shopping","Social Media"]
+EMAIL_PRICES    = {"1k":90,"5k":300,"10k":450,"25k":800,"30k":900,"75k":1500}
+EMAIL_PRICE_LIST = ("📋 *Email Leads Price List*\n"
     "1k — £90 | 5k — £300 | 10k — £450\n"
     "25k — £800 | 50k — £900 | 75k — £1500\n"
     "100k — £2700 | 250k — £4200 | 500k — £7500\n"
     "750k — £10000 | 1M — £14000\n"
-    "1M+ — Message {admin}"
-)
+    "1M+ — Message {admin}")
 
-# ─────────────────────────────────────────
-# SMS DATA
-# ─────────────────────────────────────────
 SMS_CARRIERS = {
-    "AUSTRALIA":          ["Telstra", "Optus", "Vodafone AU", "TPG", "Boost Mobile AU", "Aldi Mobile", "Amaysim"],
-    "AUSTRIA":            ["A1 Telekom", "Magenta AT", "Drei Austria", "HoT", "Spusu"],
-    "BELGIUM":            ["Proximus", "Orange BE", "Base", "Mobile Vikings", "Scarlet"],
-    "BRAZIL":             ["Vivo", "Claro BR", "TIM BR", "Oi", "Nextel BR"],
-    "CANADA":             ["Rogers", "Bell Canada", "Telus", "Freedom Mobile", "Koodo", "Fido", "Virgin Plus"],
-    "CAYMAN ISLAND":      ["Flow Cayman", "Digicel Cayman"],
-    "CHILE":              ["Entel Chile", "Movistar Chile", "Claro Chile", "WOM"],
-    "COLOMBIA":           ["Claro Colombia", "Movistar Colombia", "Tigo Colombia", "WOM Colombia"],
-    "CROATIA":            ["Hrvatski Telekom", "A1 Croatia", "Tele2 Croatia", "Telemach"],
-    "CURACAO":            ["Flow Curacao", "Digicel Curacao", "UTS"],
-    "CYPRUS":             ["Cyta", "MTN Cyprus", "Epic"],
-    "CZECH REPUBLIC":     ["T-Mobile CZ", "O2 CZ", "Vodafone CZ", "CETIN"],
-    "DENMARK":            ["TDC", "Telenor DK", "Telia DK", "3 Denmark", "Lebara DK"],
-    "DOMINICAN REPUBLIC": ["Claro DR", "Altice DR", "Viva DR"],
-    "ECUADOR":            ["Claro Ecuador", "Movistar Ecuador", "CNT"],
-    "ESTONIA":            ["Telia EE", "Tele2 EE", "Elisa EE"],
-    "FINLAND":            ["Elisa FI", "DNA FI", "Telia FI", "Moi Mobiili"],
-    "FRANCE":             ["Orange FR", "SFR", "Bouygues", "Free Mobile"],
-    "GERMANY":            ["Telekom DE", "Vodafone DE", "O2 DE", "1&1", "Aldi Talk"],
-    "GREECE":             ["Cosmote", "Vodafone GR", "Wind GR", "Nova GR"],
-    "HONG KONG":          ["PCCW", "CSL", "3 HK", "China Mobile HK", "SmarTone"],
-    "HUNGARY":            ["Telekom HU", "Vodafone HU", "Yettel"],
-    "ICELAND":            ["Siminn", "Vodafone IS", "Nova IS"],
-    "INDONESIA":          ["Telkomsel", "Indosat", "XL Axiata", "Tri ID", "Smartfren"],
-    "IRELAND":            ["Vodafone IE", "Three IE", "Eir", "Tesco Mobile IE", "48 IE"],
-    "ISRAEL":             ["Cellcom", "Partner", "Hot Mobile", "Golan Telecom"],
-    "ITALY":              ["TIM IT", "Vodafone IT", "Wind Tre", "Iliad IT"],
-    "LATVIA":             ["LMT", "Tele2 LV", "Bite LV"],
-    "LITHUANIA":          ["Tele2 LT", "Bite LT", "Telia LT"],
-    "LUXEMBOURG":         ["Post LU", "Tango LU", "Orange LU"],
-    "MACAO":              ["CTM", "3 Macau", "SmarTone Macau"],
-    "MALAYSIA":           ["Maxis", "Celcom", "Digi MY", "U Mobile", "Tune Talk"],
-    "MALTA":              ["GO Malta", "Vodafone MT", "Melita"],
-    "MYANMAR":            ["MPT", "Ooredoo MM", "Telenor MM", "Atom MM"],
-    "NEPAL":              ["Ncell", "Nepal Telecom", "Smart Cell"],
-    "NETHERLAND":         ["KPN", "Vodafone NL", "T-Mobile NL", "Tele2 NL", "Ben NL"],
-    "NEW ZEALAND":        ["Spark NZ", "Vodafone NZ", "2degrees"],
-    "NORWAY":             ["Telenor NO", "Telia NO", "Ice NO"],
-    "PHILIPPINES":        ["Globe", "Smart PH", "DITO", "Sun Cellular"],
-    "POLAND":             ["Orange PL", "Play", "Plus PL", "T-Mobile PL"],
-    "PORTUGAL":           ["MEO", "NOS", "Vodafone PT", "NOWO"],
-    "ROMANIA":            ["Orange RO", "Vodafone RO", "Telekom RO", "Digi RO"],
-    "RUSSIA":             ["MTS", "Beeline RU", "MegaFon", "Tele2 RU"],
-    "SINGAPORE":          ["Singtel", "StarHub", "M1", "TPG SG"],
-    "SLOVAKIA":           ["Slovak Telekom", "Orange SK", "O2 SK", "4ka"],
-    "SLOVENIA":           ["Telekom SI", "A1 SI", "Telemach SI"],
-    "SOUTH AFRICA":       ["Vodacom", "MTN SA", "Cell C", "Telkom SA"],
-    "SPAIN":              ["Movistar ES", "Vodafone ES", "Orange ES", "MasMovil", "Yoigo"],
-    "SWEDEN":             ["Telia SE", "Tele2 SE", "Telenor SE", "Three SE"],
-    "SWITZERLAND":        ["Swisscom", "Sunrise", "Salt CH"],
-    "THAILAND":           ["AIS", "DTAC", "True Move", "NT Mobile"],
-    "UK":                 ["EE", "JT JERSEY", "LYCA", "MANX NETWORK", "O2", "ORANGE", "SKY", "SURE", "THREE", "UK MIXED", "VIRGIN", "VODA"],
-    "UKRAINE":            ["Kyivstar", "Vodafone UA", "lifecell"],
-    "USA":                ["AT&T", "Verizon", "T-Mobile US", "Sprint", "Cricket", "Metro PCS", "Boost US", "US Cellular"],
-    "VIETNAM":            ["Viettel", "Mobifone", "Vinaphone", "Gmobile"],
+    "AUSTRALIA":["Telstra","Optus","Vodafone AU","TPG","Boost Mobile AU","Aldi Mobile","Amaysim"],
+    "AUSTRIA":["A1 Telekom","Magenta AT","Drei Austria","HoT","Spusu"],
+    "BELGIUM":["Proximus","Orange BE","Base","Mobile Vikings","Scarlet"],
+    "BRAZIL":["Vivo","Claro BR","TIM BR","Oi","Nextel BR"],
+    "CANADA":["Rogers","Bell Canada","Telus","Freedom Mobile","Koodo","Fido","Virgin Plus"],
+    "CAYMAN ISLAND":["Flow Cayman","Digicel Cayman"],
+    "CHILE":["Entel Chile","Movistar Chile","Claro Chile","WOM"],
+    "COLOMBIA":["Claro Colombia","Movistar Colombia","Tigo Colombia","WOM Colombia"],
+    "CROATIA":["Hrvatski Telekom","A1 Croatia","Tele2 Croatia","Telemach"],
+    "CURACAO":["Flow Curacao","Digicel Curacao","UTS"],
+    "CYPRUS":["Cyta","MTN Cyprus","Epic"],
+    "CZECH REPUBLIC":["T-Mobile CZ","O2 CZ","Vodafone CZ","CETIN"],
+    "DENMARK":["TDC","Telenor DK","Telia DK","3 Denmark","Lebara DK"],
+    "DOMINICAN REPUBLIC":["Claro DR","Altice DR","Viva DR"],
+    "ECUADOR":["Claro Ecuador","Movistar Ecuador","CNT"],
+    "ESTONIA":["Telia EE","Tele2 EE","Elisa EE"],
+    "FINLAND":["Elisa FI","DNA FI","Telia FI","Moi Mobiili"],
+    "FRANCE":["Orange FR","SFR","Bouygues","Free Mobile"],
+    "GERMANY":["Telekom DE","Vodafone DE","O2 DE","1&1","Aldi Talk"],
+    "GREECE":["Cosmote","Vodafone GR","Wind GR","Nova GR"],
+    "HONG KONG":["PCCW","CSL","3 HK","China Mobile HK","SmarTone"],
+    "HUNGARY":["Telekom HU","Vodafone HU","Yettel"],
+    "ICELAND":["Siminn","Vodafone IS","Nova IS"],
+    "INDONESIA":["Telkomsel","Indosat","XL Axiata","Tri ID","Smartfren"],
+    "IRELAND":["Vodafone IE","Three IE","Eir","Tesco Mobile IE","48 IE"],
+    "ISRAEL":["Cellcom","Partner","Hot Mobile","Golan Telecom"],
+    "ITALY":["TIM IT","Vodafone IT","Wind Tre","Iliad IT"],
+    "LATVIA":["LMT","Tele2 LV","Bite LV"],
+    "LITHUANIA":["Tele2 LT","Bite LT","Telia LT"],
+    "LUXEMBOURG":["Post LU","Tango LU","Orange LU"],
+    "MACAO":["CTM","3 Macau","SmarTone Macau"],
+    "MALAYSIA":["Maxis","Celcom","Digi MY","U Mobile","Tune Talk"],
+    "MALTA":["GO Malta","Vodafone MT","Melita"],
+    "MYANMAR":["MPT","Ooredoo MM","Telenor MM","Atom MM"],
+    "NEPAL":["Ncell","Nepal Telecom","Smart Cell"],
+    "NETHERLAND":["KPN","Vodafone NL","T-Mobile NL","Tele2 NL","Ben NL"],
+    "NEW ZEALAND":["Spark NZ","Vodafone NZ","2degrees"],
+    "NORWAY":["Telenor NO","Telia NO","Ice NO"],
+    "PHILIPPINES":["Globe","Smart PH","DITO","Sun Cellular"],
+    "POLAND":["Orange PL","Play","Plus PL","T-Mobile PL"],
+    "PORTUGAL":["MEO","NOS","Vodafone PT","NOWO"],
+    "ROMANIA":["Orange RO","Vodafone RO","Telekom RO","Digi RO"],
+    "RUSSIA":["MTS","Beeline RU","MegaFon","Tele2 RU"],
+    "SINGAPORE":["Singtel","StarHub","M1","TPG SG"],
+    "SLOVAKIA":["Slovak Telekom","Orange SK","O2 SK","4ka"],
+    "SLOVENIA":["Telekom SI","A1 SI","Telemach SI"],
+    "SOUTH AFRICA":["Vodacom","MTN SA","Cell C","Telkom SA"],
+    "SPAIN":["Movistar ES","Vodafone ES","Orange ES","MasMovil","Yoigo"],
+    "SWEDEN":["Telia SE","Tele2 SE","Telenor SE","Three SE"],
+    "SWITZERLAND":["Swisscom","Sunrise","Salt CH"],
+    "THAILAND":["AIS","DTAC","True Move","NT Mobile"],
+    "UK":["EE","JT JERSEY","LYCA","MANX NETWORK","O2","ORANGE","SKY","SURE","THREE","UK MIXED","VIRGIN","VODA"],
+    "UKRAINE":["Kyivstar","Vodafone UA","lifecell"],
+    "USA":["AT&T","Verizon","T-Mobile US","Sprint","Cricket","Metro PCS","Boost US","US Cellular"],
+    "VIETNAM":["Viettel","Mobifone","Vinaphone","Gmobile"],
 }
 SMS_COUNTRIES = sorted(SMS_CARRIERS.keys())
-SMS_AMOUNTS   = ["1k", "5k", "10k", "25k", "50k", "100k", "200k", "500k"]
-SMS_PRICES    = {
-    "1k": 30, "2k": 54, "3k": 72, "4k": 90, "5k": 100,
-    "10k": 160, "15k": 240, "20k": 300, "25k": 360,
-    "30k": 440, "35k": 490, "40k": 520, "45k": 540,
-    "50k": 560, "100k": 700, "200k": 1000, "500k": 1600
-}
-SMS_PRICE_LIST = (
-    "📋 *SMS Leads Price List*\n"
+SMS_AMOUNTS   = ["1k","5k","10k","25k","50k","100k","200k","500k"]
+SMS_PRICES    = {"1k":30,"2k":54,"3k":72,"4k":90,"5k":100,"10k":160,"15k":240,"20k":300,
+                 "25k":360,"30k":440,"35k":490,"40k":520,"45k":540,"50k":560,"100k":700,
+                 "200k":1000,"500k":1600}
+SMS_PRICE_LIST = ("📋 *SMS Leads Price List*\n"
     "1k — £30 | 2k — £54 | 3k — £72\n"
     "4k — £90 | 5k — £100 | 10k — £160\n"
     "15k — £240 | 20k — £300 | 25k — £360\n"
     "30k — £440 | 35k — £490 | 40k — £520\n"
     "45k — £540 | 50k — £560 | 100k — £700\n"
     "200k — £1000 | 500k — £1600\n"
-    "1M+ — Message {admin}"
-)
+    "1M+ — Message {admin}")
 
-# ─────────────────────────────────────────
-# CRYPTO LEADS DATA
-# ─────────────────────────────────────────
-CRYPTO_EXCHANGES = [
-    "Binance", "Bybit", "Coinbase", "OKX", "Upbit",
-    "Bitget", "Kraken", "Kucoin", "Mexc", "Bitfinex"
-]
-CRYPTO_PRICES = {
-    "1k": 200, "2k": 380, "3k": 540, "4k": 680, "5k": 800,
-    "10k": 1500, "15k": 2100, "20k": 2600, "25k": 3000
-}
+CRYPTO_EXCHANGES = ["Binance","Bybit","Coinbase","OKX","Upbit","Bitget","Kraken","Kucoin","Mexc","Bitfinex"]
+CRYPTO_PRICES    = {"1k":200,"2k":380,"3k":540,"4k":680,"5k":800,"10k":1500,"15k":2100,"20k":2600,"25k":3000}
 
-FAQ_TEXT = (
-    "❓ *Frequently Asked Questions*\n\n"
-    "━━━━━━━━━━━━━━━━━━━━\n"
-    "*How to top up?*\n"
-    "1. Tap the start button on the LeadsPlug bot\n"
-    "2. Click 'Wallet'\n"
-    "3. Select 'Top Up'\n"
-    "4. Select the amount you wish to top up\n"
-    "5. Send the crypto to the address shown. Priority transactions are received quicker.\n\n"
-    "Note: Credited at 1 BTC confirmation & 6 ETH confirmations.\n\n"
-    "━━━━━━━━━━━━━━━━━━━━\n"
-    "*How do I receive my leads?*\n"
-    "Once topped up, select the leads you want and the network. The bot will send your files instantly!\n\n"
-    "━━━━━━━━━━━━━━━━━━━━\n"
-    "*Did you encounter a bad batch?*\n"
-    "Please private message {admin} to get this resolved. We take care of our customers!\n\n"
-    "━━━━━━━━━━━━━━━━━━━━\n"
-    "*Interested in bulk orders?*\n"
-    "If your requested amount is larger than 50k, contact {admin} directly for private discounts. Bulk buyers only!\n\n"
-    "━━━━━━━━━━━━━━━━━━━━\n"
-    "*Would you like to request a custom country?*\n"
-    "Provide the country name/prefix to {admin}.\n"
-    "Note: Orders may take up to 24 hours.\n\n"
-    "━━━━━━━━━━━━━━━━━━━━\n"
-    "*Do we condone malicious behaviour?*\n"
-    "Absolutely NOT. If you use our products for malicious behaviour, you will be blocked and banned."
-)
+FAQ_TEXT = ("❓ *Frequently Asked Questions*\n\n"
+    "How to top up?\n"
+    "1. Tap start on the bot\n"
+    "2. Click Wallet\n"
+    "3. Select Top Up\n"
+    "4. Select amount and send crypto to the address shown\n"
+    "Note: Credited at 1 BTC confirmation and 6 ETH confirmations.\n\n"
+    "How do I receive my leads?\n"
+    "Once topped up, select your leads and network. Files sent instantly!\n\n"
+    "Bad batch? Contact {admin}\n\n"
+    "Bulk orders over 50k? Contact {admin} for private discounts.\n\n"
+    "Custom country? Send country name to {admin}\n\n"
+    "We do NOT condone malicious behaviour. Offenders will be banned.")
 
-# ─────────────────────────────────────────
-# CONSOLE LOGGER
-# ─────────────────────────────────────────
-async def console_log(context, user, action: str, detail: str = ""):
+# ─── HELPERS ───
+async def console_log(context, user, action, detail=""):
     try:
         username = f"@{user.username}" if user.username else user.first_name
         msg = f"{username} ({user.id}) {action}"
@@ -186,22 +133,24 @@ async def console_log(context, user, action: str, detail: str = ""):
     except Exception as e:
         logger.error(f"Console log error: {e}")
 
-# ─────────────────────────────────────────
-# KEYBOARD HELPERS
-# ─────────────────────────────────────────
-def make_grid(items, callback_prefix, cols=2, back_callback="main_menu"):
+def is_admin(update):
+    user_id = str(update.effective_user.id)
+    chat_id = str(update.effective_chat.id)
+    return user_id == str(ADMIN_CHAT_ID) or chat_id == str(CONSOLE_CHAT)
+
+def make_grid(items, prefix, cols=2, back="main_menu"):
     buttons, row = [], []
     for item in items:
-        row.append(InlineKeyboardButton(item, callback_data=f"{callback_prefix}:{item}"))
+        row.append(InlineKeyboardButton(item, callback_data=f"{prefix}:{item}"))
         if len(row) == cols:
             buttons.append(row)
             row = []
     if row:
         buttons.append(row)
-    buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=back_callback)])
+    buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=back)])
     return InlineKeyboardMarkup(buttons)
 
-def main_menu_keyboard():
+def main_menu_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("📧 Email Leads", callback_data="email_leads"),
          InlineKeyboardButton("📱 SMS Leads",   callback_data="sms_leads")],
@@ -210,44 +159,9 @@ def main_menu_keyboard():
          InlineKeyboardButton("❓ FAQ",          callback_data="faq")],
     ])
 
-# ─────────────────────────────────────────
-# HANDLERS
-# ─────────────────────────────────────────
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if "balance" not in context.user_data:
-        context.user_data["balance"] = 0
-    await console_log(context, user, "opened the bot")
-    if not context.user_data.get("tos_accepted"):
-        await update.message.reply_text(
-            "📜 *Terms of Service*\n\n"
-            "Do you agree to not use the products we provide for illegal or malicious intent?",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Accept",  callback_data="tos_accept")],
-                [InlineKeyboardButton("❌ Decline", callback_data="tos_decline")],
-            ])
-        )
-    else:
-        await send_welcome(update.message, context)
-
-async def send_welcome(msg, context):
-    balance = context.user_data.get("balance", 0)
-    await msg.reply_text(
-        f"Welcome to {ADMIN_USERNAME}!\n\n"
-        "Tap 'Leads' to purchase leads.\n"
-        "Tap 'Wallet' to view your balance and top up your wallet.\n"
-        "Tap 'FAQs' for Frequently Asked Questions.\n\n"
-        "We do not condone any illegal or illicit behaviour with the product we sell.\n\n"
-        f"💰 *Current Balance: £{balance}*",
-        parse_mode="Markdown",
-        reply_markup=main_menu_keyboard()
-    )
-
 async def show_tos(query):
     await query.edit_message_text(
-        "📜 *Terms of Service*\n\n"
-        "Do you agree to not use the products we provide for illegal or malicious intent?",
+        "📜 *Terms of Service*\n\nDo you agree to not use the products we provide for illegal or malicious intent?",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Accept",  callback_data="order_tos_accept")],
@@ -255,6 +169,29 @@ async def show_tos(query):
         ])
     )
 
+# ─── START ───
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if "balance" not in context.user_data:
+        context.user_data["balance"] = 0
+    await console_log(context, user, "opened the bot")
+    if not context.user_data.get("tos_accepted"):
+        await update.message.reply_text(
+            "📜 *Terms of Service*\n\nDo you agree to not use the products we provide for illegal or malicious intent?",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Accept",  callback_data="tos_accept")],
+                [InlineKeyboardButton("❌ Decline", callback_data="tos_decline")],
+            ])
+        )
+    else:
+        balance = context.user_data.get("balance", 0)
+        await update.message.reply_text(
+            f"Welcome to {ADMIN_USERNAME}!\n\nTap Leads to purchase leads.\nTap Wallet to view your balance and top up.\nTap FAQs for Frequently Asked Questions.\n\nWe do not condone any illegal or illicit behaviour with the product we sell.\n\n💰 *Current Balance: £{balance}*",
+            parse_mode="Markdown", reply_markup=main_menu_kb()
+        )
+
+# ─── BUTTONS ───
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query   = update.callback_query
     await query.answer()
@@ -263,40 +200,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user    = query.from_user
     admin   = ADMIN_USERNAME
 
-    # ── TOS ──
     if data == "tos_accept":
         context.user_data["tos_accepted"] = True
         await console_log(context, user, "accepted the Terms of Service")
         await query.edit_message_text(
-            f"Welcome to {admin}!\n\n"
-            "Tap 'Leads' to purchase leads.\n"
-            "Tap 'Wallet' to view your balance and top up your wallet.\n"
-            "Tap 'FAQs' for Frequently Asked Questions.\n\n"
-            "We do not condone any illegal or illicit behaviour with the product we sell.\n\n"
-            f"💰 *Current Balance: £{balance}*",
-            parse_mode="Markdown",
-            reply_markup=main_menu_keyboard()
+            f"Welcome to {admin}!\n\nTap Leads to purchase leads.\nTap Wallet to view your balance and top up.\nTap FAQs for Frequently Asked Questions.\n\nWe do not condone any illegal or illicit behaviour with the product we sell.\n\n💰 *Current Balance: £{balance}*",
+            parse_mode="Markdown", reply_markup=main_menu_kb()
         )
     elif data == "tos_decline":
         await console_log(context, user, "declined the Terms of Service")
         await query.edit_message_text("❌ You must accept the Terms of Service.\n\nSend /start to try again.")
 
-    # ── MAIN MENU ──
     elif data == "main_menu":
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n\nPlease choose an option below:",
-            parse_mode="Markdown",
-            reply_markup=main_menu_keyboard()
+            parse_mode="Markdown", reply_markup=main_menu_kb()
         )
 
-    # ══════════════════════════════════════
-    # WALLET & TOP-UP
-    # ══════════════════════════════════════
     elif data == "wallet":
         await query.edit_message_text(
-            f"ID: {user.id}\n\n"
-            f"You currently have £{balance} in your wallet.\n\n"
-            "To add more please click on 'Top Up' and select the amount you would like to add to your wallet.",
+            f"ID: {user.id}\n\nYou currently have £{balance} in your wallet.\n\nTo add more please click on Top Up and select the amount you would like to add to your wallet.",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("💳 Top Up", callback_data="topup_select_token")],
                 [InlineKeyboardButton("⬅️ Back",   callback_data="main_menu")],
@@ -306,35 +229,28 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "topup_select_token":
         await query.edit_message_text(
             "Please select which token you would like to top up with:",
-            reply_markup=make_grid(TOPUP_TOKENS, "topup_token", cols=1, back_callback="wallet")
+            reply_markup=make_grid(TOPUP_TOKENS, "topup_token", cols=1, back="wallet")
         )
 
     elif data.startswith("topup_token:"):
-        token = data.split(":", 1)[1]
+        token = data.split(":",1)[1]
         context.user_data["topup_token"] = token
         short = token.split("(")[1].split(")")[0].split("/")[0].strip() if "(" in token else token
         await console_log(context, user, "is topping up with", token)
         await query.edit_message_text(
             f"Select topup amount ({short}):",
-            reply_markup=make_grid(
-                [f"£{a}" for a in TOPUP_AMOUNTS],
-                "topup_amount", cols=2, back_callback="topup_select_token"
-            )
+            reply_markup=make_grid([f"£{a}" for a in TOPUP_AMOUNTS], "topup_amount", cols=2, back="topup_select_token")
         )
 
     elif data.startswith("topup_amount:"):
-        amount_str = data.split(":", 1)[1]
-        amount_val = int(amount_str.replace("£", ""))
-        token      = context.user_data.get("topup_token", "N/A")
-        address    = WALLET_ADDRESSES.get(token, "N/A")
+        amount_val = int(data.split(":",1)[1].replace("£",""))
+        token      = context.user_data.get("topup_token","N/A")
+        address    = WALLET_ADDRESSES.get(token,"N/A")
         short      = token.split("(")[1].split(")")[0].strip() if "(" in token else token
-        context.user_data["pending_topup"] = {"token": token, "amount": amount_val}
+        context.user_data["pending_topup"] = {"token":token,"amount":amount_val}
         await console_log(context, user, f"selected top up amount £{amount_val} via {token}")
         await query.edit_message_text(
-            f"A new charge of £{amount_val} has been created.\n\n"
-            f"Please send {short} to the address below to top up:\n\n"
-            f"`{address}`\n\n"
-            "The amount will be added to your wallet balance once the required confirmations have been reached.",
+            f"A new charge of £{amount_val} has been created.\n\nPlease send {short} to the address below:\n\n`{address}`\n\nThe amount will be added to your wallet once confirmations are reached.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("✅ I've Sent Payment", callback_data=f"topup_paid:{amount_val}")],
@@ -343,187 +259,136 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data.startswith("topup_paid:"):
-        amount_val = int(data.split(":", 1)[1])
-        topup      = context.user_data.get("pending_topup", {})
+        amount_val = int(data.split(":",1)[1])
+        topup      = context.user_data.get("pending_topup",{})
         await console_log(context, user, f"submitted top up payment of £{amount_val}")
         await query.edit_message_text(
-            f"✅ *Top-Up Request Submitted!*\n\n"
-            f"Amount: £{amount_val}\n"
-            f"Token: {topup.get('token', 'N/A')}\n\n"
-            "Your balance will be updated once payment is confirmed.\n"
-            f"Contact {admin} if you have any questions.",
+            f"✅ *Top-Up Request Submitted!*\n\nAmount: £{amount_val}\nToken: {topup.get('token','N/A')}\n\nYour balance will be updated once payment is confirmed.\nContact {admin} if you have any questions.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]])
         )
         if ADMIN_CHAT_ID:
             try:
-                await context.bot.send_message(
-                    chat_id=ADMIN_CHAT_ID,
-                    text=(
-                        f"💳 TOP-UP REQUEST\n\n"
-                        f"User: @{user.username or user.first_name}\n"
-                        f"ID: {user.id}\n"
-                        f"Amount: £{amount_val}\n"
-                        f"Token: {topup.get('token','N/A')}\n\n"
-                        f"Use /userbal {user.id} {amount_val} pass to credit after verification."
-                    )
-                )
+                await context.bot.send_message(chat_id=ADMIN_CHAT_ID,
+                    text=f"TOP-UP REQUEST\n\nUser: @{user.username or user.first_name}\nID: {user.id}\nAmount: £{amount_val}\nToken: {topup.get('token','N/A')}\n\nUse /userbal {user.id} {amount_val} pass to credit.")
             except Exception as e:
                 logger.error(f"Admin notify error: {e}")
         context.user_data.pop("pending_topup", None)
 
-    # ══════════════════════════════════════
-    # EMAIL LEADS
-    # ══════════════════════════════════════
     elif data == "email_leads":
         await query.edit_message_text(
-            f"💰 *Current Balance: £{balance}*\n\n"
-            + EMAIL_PRICE_LIST.format(admin=admin) +
-            "\n\n🌍 Please select a country:",
+            f"💰 *Current Balance: £{balance}*\n\n" + EMAIL_PRICE_LIST.format(admin=admin) + "\n\n🌍 Please select a country:",
             parse_mode="Markdown",
-            reply_markup=make_grid(EMAIL_COUNTRIES, "email_country", cols=2, back_callback="main_menu")
+            reply_markup=make_grid(EMAIL_COUNTRIES, "email_country", cols=2, back="main_menu")
         )
 
     elif data.startswith("email_country:"):
-        country = data.split(":", 1)[1]
+        country = data.split(":",1)[1]
         context.user_data["email_country"] = country
         await console_log(context, user, f"selected Email Leads — country: {country}")
-        await query.edit_message_text(
-            f"🌍 *Country:* {country}\n\nPlease select a provider:",
+        await query.edit_message_text(f"🌍 *Country:* {country}\n\nPlease select a provider:",
             parse_mode="Markdown",
-            reply_markup=make_grid(EMAIL_PROVIDERS, "email_provider", cols=1, back_callback="email_leads")
+            reply_markup=make_grid(EMAIL_PROVIDERS, "email_provider", cols=1, back="email_leads")
         )
 
     elif data.startswith("email_provider:"):
-        provider = data.split(":", 1)[1]
+        provider = data.split(":",1)[1]
         context.user_data["email_provider"] = provider
-        country  = context.user_data.get("email_country", "N/A")
+        country  = context.user_data.get("email_country","N/A")
         await console_log(context, user, f"selected Email Leads — provider: {provider}")
         await query.edit_message_text(
-            f"🌍 *Country:* {country}\n🏢 *Provider:* {provider}\n\n"
-            "📦 Please select the amount:",
+            f"🌍 *Country:* {country}\n🏢 *Provider:* {provider}\n\n📦 Please select the amount:",
             parse_mode="Markdown",
-            reply_markup=make_grid(
-                [f"{k} - £{v}" for k, v in EMAIL_PRICES.items()],
-                "email_amount", cols=1, back_callback="email_leads"
-            )
+            reply_markup=make_grid([f"{k} - £{v}" for k,v in EMAIL_PRICES.items()], "email_amount", cols=1, back="email_leads")
         )
 
     elif data.startswith("email_amount:"):
-        selected = data.split(":", 1)[1]
+        selected = data.split(":",1)[1]
         amount   = selected.split(" - ")[0]
         price    = EMAIL_PRICES.get(amount, 0)
         context.user_data["pending_order"] = {
-            "type": "Email Leads",
-            "country": context.user_data.get("email_country", "N/A"),
-            "provider": context.user_data.get("email_provider", "N/A"),
-            "amount": amount, "price": price
+            "type":"Email Leads","country":context.user_data.get("email_country","N/A"),
+            "provider":context.user_data.get("email_provider","N/A"),"amount":amount,"price":price
         }
         await console_log(context, user, f"is ordering {amount} Email Leads for £{price}")
         await show_tos(query)
 
-    # ══════════════════════════════════════
-    # SMS LEADS
-    # ══════════════════════════════════════
     elif data == "sms_leads":
         await query.edit_message_text(
-            f"💰 *Current Balance: £{balance}*\n\n"
-            + SMS_PRICE_LIST.format(admin=admin) +
-            "\n\n🌍 Please select a country!",
+            f"💰 *Current Balance: £{balance}*\n\n" + SMS_PRICE_LIST.format(admin=admin) + "\n\n🌍 Please select a country!",
             parse_mode="Markdown",
-            reply_markup=make_grid(SMS_COUNTRIES, "sms_country", cols=2, back_callback="main_menu")
+            reply_markup=make_grid(SMS_COUNTRIES, "sms_country", cols=2, back="main_menu")
         )
 
     elif data.startswith("sms_country:"):
-        country  = data.split(":", 1)[1]
+        country  = data.split(":",1)[1]
         context.user_data["sms_country"] = country
-        carriers = SMS_CARRIERS.get(country, [])
+        carriers = SMS_CARRIERS.get(country,[])
         await console_log(context, user, f"selected SMS Leads — country: {country}")
-        await query.edit_message_text(
-            f"🌍 *Country:* {country}\n\n📡 Please select a carrier:",
+        await query.edit_message_text(f"🌍 *Country:* {country}\n\n📡 Please select a carrier:",
             parse_mode="Markdown",
-            reply_markup=make_grid(carriers, "sms_carrier", cols=2, back_callback="sms_leads")
+            reply_markup=make_grid(carriers, "sms_carrier", cols=2, back="sms_leads")
         )
 
     elif data.startswith("sms_carrier:"):
-        carrier = data.split(":", 1)[1]
+        carrier = data.split(":",1)[1]
         context.user_data["sms_carrier"] = carrier
-        country = context.user_data.get("sms_country", "N/A")
+        country = context.user_data.get("sms_country","N/A")
         await console_log(context, user, f"selected SMS Leads — carrier: {carrier}")
         await query.edit_message_text(
-            f"🌍 *Country:* {country}\n📡 *Carrier:* {carrier}\n\n"
-            "📦 Please select the amount:",
+            f"🌍 *Country:* {country}\n📡 *Carrier:* {carrier}\n\n📦 Please select the amount:",
             parse_mode="Markdown",
-            reply_markup=make_grid(
-                [f"{k} - £{v}" for k, v in SMS_PRICES.items() if k in SMS_AMOUNTS],
-                "sms_amount", cols=1, back_callback="sms_leads"
-            )
+            reply_markup=make_grid([f"{k} - £{v}" for k,v in SMS_PRICES.items() if k in SMS_AMOUNTS], "sms_amount", cols=1, back="sms_leads")
         )
 
     elif data.startswith("sms_amount:"):
-        selected = data.split(":", 1)[1]
+        selected = data.split(":",1)[1]
         amount   = selected.split(" - ")[0]
-        price    = SMS_PRICES.get(amount, 0)
+        price    = SMS_PRICES.get(amount,0)
         context.user_data["pending_order"] = {
-            "type": "SMS Leads",
-            "country": context.user_data.get("sms_country", "N/A"),
-            "carrier": context.user_data.get("sms_carrier", "N/A"),
-            "amount": amount, "price": price
+            "type":"SMS Leads","country":context.user_data.get("sms_country","N/A"),
+            "carrier":context.user_data.get("sms_carrier","N/A"),"amount":amount,"price":price
         }
         await console_log(context, user, f"is ordering {amount} SMS Leads for £{price}")
         await show_tos(query)
 
-    # ══════════════════════════════════════
-    # CRYPTO LEADS
-    # ══════════════════════════════════════
     elif data == "crypto_leads":
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n\nPlease select a crypto option:",
             parse_mode="Markdown",
-            reply_markup=make_grid(CRYPTO_EXCHANGES, "crypto_exchange", cols=1, back_callback="main_menu")
+            reply_markup=make_grid(CRYPTO_EXCHANGES, "crypto_exchange", cols=1, back="main_menu")
         )
 
     elif data.startswith("crypto_exchange:"):
-        exchange = data.split(":", 1)[1]
+        exchange = data.split(":",1)[1]
         context.user_data["crypto_exchange"] = exchange
         await console_log(context, user, f"selected Crypto Leads — exchange: {exchange}")
         await query.edit_message_text(
-            f"💰 *Current Balance: £{balance}*\n🏦 *Exchange:* {exchange}\n\n"
-            "📦 Please select the amount:",
+            f"💰 *Current Balance: £{balance}*\n🏦 *Exchange:* {exchange}\n\n📦 Please select the amount:",
             parse_mode="Markdown",
-            reply_markup=make_grid(
-                [f"{k} - £{v}" for k, v in CRYPTO_PRICES.items()],
-                "crypto_amount", cols=1, back_callback="crypto_leads"
-            )
+            reply_markup=make_grid([f"{k} - £{v}" for k,v in CRYPTO_PRICES.items()], "crypto_amount", cols=1, back="crypto_leads")
         )
 
     elif data.startswith("crypto_amount:"):
-        selected = data.split(":", 1)[1]
+        selected = data.split(":",1)[1]
         amount   = selected.split(" - ")[0]
-        price    = CRYPTO_PRICES.get(amount, 0)
+        price    = CRYPTO_PRICES.get(amount,0)
         context.user_data["pending_order"] = {
-            "type": "Crypto Leads", "country": "CRYPTO",
-            "provider": context.user_data.get("crypto_exchange", "N/A"),
-            "amount": amount, "price": price
+            "type":"Crypto Leads","country":"CRYPTO",
+            "provider":context.user_data.get("crypto_exchange","N/A"),"amount":amount,"price":price
         }
         await console_log(context, user, f"is ordering {amount} Crypto Leads for £{price}")
         await show_tos(query)
 
-    # ── ORDER TOS ACCEPT ──
     elif data == "order_tos_accept":
-        order = context.user_data.get("pending_order", {})
+        order = context.user_data.get("pending_order",{})
         if not order:
             await query.edit_message_text("⚠️ Session expired. Please start again.",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Menu", callback_data="main_menu")]]))
             return
-        provider_label = order.get("provider", order.get("carrier", "N/A"))
+        provider_label = order.get("provider", order.get("carrier","N/A"))
         await query.edit_message_text(
-            f"🛒 *Purchase Confirmation*\n\n"
-            f"Country: {order.get('country')}\n"
-            f"Provider: {provider_label}\n"
-            f"Amount: {order.get('amount')}\n"
-            f"Cost: £{order.get('price')}\n\n"
-            "Please click confirm if you would like to purchase or cancel.",
+            f"🛒 *Purchase Confirmation*\n\nCountry: {order.get('country')}\nProvider: {provider_label}\nAmount: {order.get('amount')}\nCost: £{order.get('price')}\n\nPlease click confirm if you would like to purchase or cancel.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("✅ Purchase", callback_data="order_confirm")],
@@ -531,11 +396,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ])
         )
 
-    # ── FINAL PURCHASE ──
     elif data == "order_confirm":
-        order   = context.user_data.get("pending_order", {})
-        price   = order.get("price", 0)
-        balance = context.user_data.get("balance", 0)
+        order   = context.user_data.get("pending_order",{})
+        price   = order.get("price",0)
+        balance = context.user_data.get("balance",0)
         if not order:
             await query.edit_message_text("⚠️ Session expired.",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Menu", callback_data="main_menu")]]))
@@ -544,104 +408,42 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await console_log(context, user, f"purchase failed — balance £{balance} but order costs £{price}")
             await query.edit_message_text(
                 "❌PLEASE TOP UP YOUR ACCOUNT❌\n\n"
-                f"Your balance is £{balance} but this order costs £{price}.\n\n"
-                "Go to Wallet to top up.",
+                f"Your balance is £{balance} but this order costs £{price}.\n\nGo to Wallet to top up.",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("👛 Wallet",       callback_data="wallet")],
+                    [InlineKeyboardButton("👛 Wallet", callback_data="wallet")],
                     [InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")],
                 ])
             )
             return
-        provider_label = order.get("provider", order.get("carrier", "N/A"))
+        provider_label = order.get("provider", order.get("carrier","N/A"))
         context.user_data["balance"] = balance - price
         await console_log(context, user, f"completed purchase: {order.get('type')} | {order.get('amount')} | £{price}")
         await query.edit_message_text(
-            f"✅ *Order Confirmed!*\n\n"
-            f"Type: {order.get('type')}\n"
-            f"Country: {order.get('country')}\n"
-            f"Provider: {provider_label}\n"
-            f"Amount: {order.get('amount')}\n"
-            f"Price: £{price}\n"
-            f"Remaining Balance: £{context.user_data['balance']}\n\n"
-            f"Your leads will be delivered within 24 hours.\n"
-            f"Contact {admin} if you have any questions.",
+            f"✅ *Order Confirmed!*\n\nType: {order.get('type')}\nCountry: {order.get('country')}\nProvider: {provider_label}\nAmount: {order.get('amount')}\nPrice: £{price}\nRemaining Balance: £{context.user_data['balance']}\n\nYour leads will be delivered within 24 hours.\nContact {admin} if you have any questions.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]])
         )
         if ADMIN_CHAT_ID:
             try:
-                await context.bot.send_message(
-                    chat_id=ADMIN_CHAT_ID,
-                    text=(
-                        f"NEW ORDER\n\n"
-                        f"User: @{user.username or user.first_name}\n"
-                        f"ID: {user.id}\n"
-                        f"Type: {order.get('type')}\n"
-                        f"Country: {order.get('country')}\n"
-                        f"Provider: {provider_label}\n"
-                        f"Amount: {order.get('amount')}\n"
-                        f"Price: £{price}"
-                    )
-                )
+                await context.bot.send_message(chat_id=ADMIN_CHAT_ID,
+                    text=f"NEW ORDER\n\nUser: @{user.username or user.first_name}\nID: {user.id}\nType: {order.get('type')}\nCountry: {order.get('country')}\nProvider: {provider_label}\nAmount: {order.get('amount')}\nPrice: £{price}")
             except Exception as e:
                 logger.error(f"Admin notify error: {e}")
         context.user_data.pop("pending_order", None)
 
-    # ── FAQ ──
     elif data == "faq":
         await query.edit_message_text(
-            FAQ_TEXT.format(admin=admin),
-            parse_mode="Markdown",
+            FAQ_TEXT.format(admin=admin), parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
         )
 
-# ─────────────────────────────────────────
-# ADMIN COMMANDS
-# ─────────────────────────────────────────
-def is_admin(update: Update, context) -> bool:
-    user_id = str(update.effective_user.id)
-    chat_id = str(update.effective_chat.id)
-    return user_id == str(ADMIN_CHAT_ID) or chat_id == str(CONSOLE_CHAT)
+# ─── ADMIN COMMANDS ───
+async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
-    await update.message.reply_text(
-        f"Chat ID: {chat.id}\nType: {chat.type}\nTitle: {getattr(chat, 'title', 'N/A')}"
-    )
-
-async def add_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context):
-        return
-    try:
-        target_id = int(context.args[0])
-        amount    = int(context.args[1])
-        if "balances" not in context.bot_data:
-            context.bot_data["balances"] = {}
-        context.bot_data["balances"][target_id] = \
-            context.bot_data["balances"].get(target_id, 0) + amount
-        new_balance = context.bot_data["balances"][target_id]
-        await update.message.reply_text(f"Added £{amount} to user {target_id}. New balance: £{new_balance}")
-        if new_balance < 100:
-            await context.bot.send_message(
-                chat_id=target_id,
-                text=(
-                    f"✅ £{amount} has been added to your wallet!\n\n"
-                    f"First time users are required to have a balance of minimum £100, "
-                    f"you currently have £{new_balance}."
-                )
-            )
-        else:
-            await context.bot.send_message(
-                chat_id=target_id,
-                text=(
-                    f"✅ £{amount} has been added to your wallet!\n\n"
-                    f"Your current balance is £{new_balance}. You're ready to purchase!"
-                )
-            )
-        await console_log(context, update.effective_user, f"added £{amount} to user {target_id}")
-    except Exception as e:
-        await update.message.reply_text(f"Usage: /addbalance <user_id> <amount>\nError: {e}")
+    await update.message.reply_text(f"Chat ID: {chat.id}\nType: {chat.type}\nTitle: {getattr(chat,'title','N/A')}")
 
 async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context):
+    if not is_admin(update):
         return
     try:
         target_id = int(context.args[0])
@@ -651,33 +453,42 @@ async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         if "balances" not in context.bot_data:
             context.bot_data["balances"] = {}
-        context.bot_data["balances"][target_id] = \
-            context.bot_data["balances"].get(target_id, 0) + amount
+        context.bot_data["balances"][target_id] = context.bot_data["balances"].get(target_id, 0) + amount
         new_balance = context.bot_data["balances"][target_id]
-        await update.message.reply_text(f"Added £{amount} to user {target_id}. New balance: £{new_balance}")
+        await update.message.reply_text(f"Balance updated for user {target_id}: £{new_balance}")
         if new_balance < 100:
-            await context.bot.send_message(
-                chat_id=target_id,
-                text=(
-                    f"✅ £{amount} has been added to your wallet!\n\n"
-                    f"First time users are required to have a balance of minimum £100, "
-                    f"you currently have £{new_balance}."
-                )
-            )
+            await context.bot.send_message(chat_id=target_id,
+                text=f"✅ £{amount} has been added to your wallet!\n\nFirst time users are required to have a balance of minimum £100, you currently have £{new_balance}.")
         else:
-            await context.bot.send_message(
-                chat_id=target_id,
-                text=(
-                    f"✅ £{amount} has been added to your wallet!\n\n"
-                    f"Your current balance is £{new_balance}. You're ready to purchase!"
-                )
-            )
-        await console_log(context, update.effective_user, f"credited £{amount} to user {target_id} via /userbal")
+            await context.bot.send_message(chat_id=target_id,
+                text=f"✅ £{amount} has been added to your wallet!\n\nYour current balance is £{new_balance}. You are ready to purchase!")
+        await console_log(context, update.effective_user, f"credited £{amount} to user {target_id}")
     except Exception as e:
         await update.message.reply_text(f"Usage: /userbal <user_id> <amount> pass\nError: {e}")
 
-async def remove_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context):
+async def addbalance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update):
+        return
+    try:
+        target_id = int(context.args[0])
+        amount    = int(context.args[1])
+        if "balances" not in context.bot_data:
+            context.bot_data["balances"] = {}
+        context.bot_data["balances"][target_id] = context.bot_data["balances"].get(target_id, 0) + amount
+        new_balance = context.bot_data["balances"][target_id]
+        await update.message.reply_text(f"Balance updated for user {target_id}: £{new_balance}")
+        if new_balance < 100:
+            await context.bot.send_message(chat_id=target_id,
+                text=f"✅ £{amount} has been added to your wallet!\n\nFirst time users are required to have a balance of minimum £100, you currently have £{new_balance}.")
+        else:
+            await context.bot.send_message(chat_id=target_id,
+                text=f"✅ £{amount} has been added to your wallet!\n\nYour current balance is £{new_balance}. You are ready to purchase!")
+        await console_log(context, update.effective_user, f"added £{amount} to user {target_id}")
+    except Exception as e:
+        await update.message.reply_text(f"Usage: /addbalance <user_id> <amount>\nError: {e}")
+
+async def removebalance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update):
         return
     try:
         target_id = int(context.args[0])
@@ -691,8 +502,8 @@ async def remove_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Usage: /removebalance <user_id> <amount>\nError: {e}")
 
-async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context):
+async def checkbalance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update):
         return
     try:
         target_id = int(context.args[0])
@@ -701,31 +512,29 @@ async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Usage: /checkbalance <user_id>\nError: {e}")
 
-async def admin_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update, context):
+async def adminhelp(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update):
         return
     await update.message.reply_text(
         "Admin Commands:\n\n"
-        "/userbal <user_id> <amount> pass — Add balance to user\n"
-        "/addbalance <user_id> <amount> — Add balance to user\n"
-        "/removebalance <user_id> <amount> — Remove balance from user\n"
-        "/checkbalance <user_id> — Check user balance\n"
-        "/getid — Get current chat ID\n"
+        "/userbal <user_id> <amount> pass — Add balance\n"
+        "/addbalance <user_id> <amount> — Add balance\n"
+        "/removebalance <user_id> <amount> — Remove balance\n"
+        "/checkbalance <user_id> — Check balance\n"
+        "/getid — Get chat ID\n"
         "/adminhelp — Show this menu"
     )
 
-# ─────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────
+# ─── MAIN ───
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start",         start))
     app.add_handler(CommandHandler("getid",         get_id))
-    app.add_handler(CommandHandler("addbalance",    add_balance))
     app.add_handler(CommandHandler("userbal",       userbal))
-    app.add_handler(CommandHandler("removebalance", remove_balance))
-    app.add_handler(CommandHandler("checkbalance",  check_balance))
-    app.add_handler(CommandHandler("adminhelp",     admin_help))
+    app.add_handler(CommandHandler("addbalance",    addbalance))
+    app.add_handler(CommandHandler("removebalance", removebalance))
+    app.add_handler(CommandHandler("checkbalance",  checkbalance))
+    app.add_handler(CommandHandler("adminhelp",     adminhelp))
     app.add_handler(CallbackQueryHandler(button_handler))
     logger.info("Bot is running...")
     app.run_polling()
