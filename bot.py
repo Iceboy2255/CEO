@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 TOKEN         = os.environ.get("BOT_TOKEN")
-ADMIN_USERNAME = "@hostingCE0"
+ADMIN_USERNAME = "@hostingceov3"
 ADMIN_CHAT_ID  = os.environ.get("ADMIN_CHAT_ID", "")
 CONSOLE_CHAT   = os.environ.get("CONSOLE_CHAT_ID", "")
 BTC_ADDRESS    = os.environ.get("BTC_ADDRESS", "YOUR_BTC_ADDRESS")
