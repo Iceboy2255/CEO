@@ -81,6 +81,58 @@ AGE_LEADS_PRICES = {
     "500K": 1610,
 }
 
+# Bank Leads Datasets (100 banks per region)
+BANK_DATASETS = {
+    "USA": [
+        "JPMorgan Chase", "Bank of America", "Wells Fargo", "Citibank", "U.S. Bank", "PNC Bank", "Truist Bank", "Capital One", "TD Bank", "BMO Bank",
+        "Citizens Bank", "Fifth Third Bank", "KeyBank", "Huntington Bank", "Regions Bank", "M&T Bank", "Ally Bank", "Discover Bank", "Synchrony Bank", "Barclays Bank Delaware",
+        "Goldman Sachs Bank USA", "Morgan Stanley Private Bank", "Charles Schwab Bank", "First Citizens Bank", "Flagstar Bank", "Comerica Bank", "Zions Bank", "East West Bank", "Webster Bank", "New York Community Bank",
+        "Old National Bank", "First Horizon Bank", "Popular Bank", "Valley Bank", "Fifth Third Bank", "Citizens Business Bank", "BankUnited", "Pinnacle Bank", "First National Bank of Pennsylvania", "Hancock Whitney Bank",
+        "Synovus Bank", "Frost Bank", "SouthState Bank", "Associated Bank", "Wintrust Bank", "First Interstate Bank", "Columbia Bank", "Umpqua Bank", "Pacific Premier Bank", "Cathay Bank",
+        "City National Bank", "Comerica Bank", "Western Alliance Bank", "Axos Bank", "Live Oak Bank", "Bread Savings", "SoFi Bank", "Varo Bank", "Current", "Chime",
+        "Upgrade", "LendingClub Bank", "American Express National Bank", "Synchrony Financial", "Marcus by Goldman Sachs", "Bank of the West", "Santander Bank", "HSBC Bank USA", "MUFG Union Bank", "Bank of China USA",
+        "ICBC USA", "Deutsche Bank USA", "BNP Paribas USA", "Crédit Agricole CIB", "Société Générale", "Standard Chartered Bank", "ING Bank USA", "Rabobank", "Commerzbank USA", "Banco Santander",
+        "Banco Popular North America", "FirstBank", "Arvest Bank", "BOK Financial", "Commerce Bank", "Frost Bank", "Prosperity Bank", "Texas Capital Bank", "Independent Bank", "Trustmark National Bank",
+        "Hancock Whitney", "First Merchants Bank", "United Bank", "Cadence Bank", "Renasant Bank", "Ameris Bank", "Synovus Bank", "FirstBank", "TowneBank", "Flagstar Bank"
+    ],
+    "UK": [
+        "HSBC UK", "Barclays", "Lloyds Bank", "NatWest", "Royal Bank of Scotland", "Santander UK", "Halifax", "Bank of Scotland", "Nationwide", "TSB",
+        "Metro Bank", "Virgin Money", "Monzo Bank", "Starling Bank", "Chase UK", "First Direct", "Co-operative Bank", "Kroo Bank", "Revolut Bank", "Wise",
+        "Aldermore Bank", "Atom Bank", "Allica Bank", "Arbuthnot Latham", "Gatehouse Bank", "Al Rayan Bank", "Bank of Ireland UK", "Bank of China UK", "Bank of Beirut UK", "Bank of Baroda UK",
+        "Bank of Ceylon UK", "Bank of London and The Middle East", "Brown Shipley", "C. Hoare & Co", "FirstBank UK", "GB Bank", "Griffin Bank", "Guaranty Trust Bank UK", "Gulf International Bank UK", "Habib Bank Zurich",
+        "Hampshire Trust Bank", "Handelsbanken", "HBL Bank UK", "HSBC Bank", "ICBC Standard Bank", "ICICI Bank UK", "Investec Bank", "LHV Bank", "Lloyds Bank Corporate Markets", "Hampden & Co",
+        "Shawbrook Bank", "Secure Trust Bank", "Starling Bank", "Tandem Bank", "Triodos Bank UK", "Vanquis Bank", "Vida Bank", "Zopa Bank", "OakNorth Bank", "Paragon Bank",
+        "Close Brothers", "Charter Court Financial Services", "Cambridge & Counties Bank", "Recognise Bank", "DF Capital Bank", "Hampshire Trust Bank", "United Trust Bank", "Arbuthnot Commercial Asset Based Lending", "Allica Bank", "Bank of Africa UK",
+        "FCMB Bank UK", "FCE Bank", "FidBank UK", "Ghana International Bank", "Goldman Sachs International Bank", "Arab Bank Europe", "Bank Mandiri Europe", "Bank Saderat", "Bank Sepah International", "British Arab Commercial Bank",
+        "First Abu Dhabi Bank", "First Commercial Bank", "FirstRand Bank", "JPMorgan Chase Bank", "Bank of America", "Citibank UK", "Deutsche Bank", "BNP Paribas", "Crédit Agricole", "Danske Bank",
+        "DBS Bank", "DNB Bank", "Emirates NBD", "ING Bank", "MUFG Bank", "Mizuho Bank", "Standard Chartered", "State Bank of India UK", "UBS", "United Bank for Africa UK"
+    ],
+    "Ireland": [
+        "AIB", "Bank of Ireland", "Permanent TSB", "EBS", "Avant Money", "Bank of America Europe DAC", "Citibank Europe", "Barclays Bank Ireland", "Bank of Montreal Europe", "Dell Bank International",
+        "Hewlett-Packard International Bank", "KBC Bank Ireland", "Ulster Bank Ireland", "BNP Paribas Ireland", "Deutsche Bank Ireland", "HSBC Continental Europe", "J.P. Morgan Bank Ireland", "Goldman Sachs Bank Europe", "Morgan Stanley Bank International", "State Street Bank International",
+        "Northern Trust", "Bank of China", "China Construction Bank", "Industrial and Commercial Bank of China", "Agricultural Bank of China", "Credit Suisse International", "UBS Europe", "Société Générale", "Crédit Agricole", "ING Bank",
+        "Rabobank", "Danske Bank", "Nordea Bank", "DNB Bank", "ABN AMRO", "Commerzbank", "UniCredit Bank", "Intesa Sanpaolo", "Banco Santander", "BBVA",
+        "CaixaBank", "Banco Sabadell", "Bankinter", "BNP Paribas Securities Services", "Bank of Nova Scotia", "Royal Bank of Canada", "Canadian Imperial Bank of Commerce", "Toronto-Dominion Bank", "National Bank of Canada", "MUFG Bank",
+        "Mizuho Bank", "Sumitomo Mitsui Banking Corporation", "Nomura Bank", "Shinhan Bank", "Woori Bank", "Hana Bank", "KEB Hana Bank", "Korea Development Bank", "Bank of Tokyo-Mitsubishi", "Arab Bank",
+        "Qatar National Bank", "Emirates NBD", "First Abu Dhabi Bank", "Mashreq Bank", "Abu Dhabi Commercial Bank", "Kuwait Finance House", "Ahli United Bank", "Bank of Beirut", "Bank of Cyprus", "Hellenic Bank",
+        "Eurobank", "National Bank of Greece", "Alpha Bank", "Piraeus Bank", "Erste Bank", "Raiffeisen Bank International", "BAWAG", "Česká spořitelna", "Société Générale", "ING Bank N.V.",
+        "Lloyds Bank", "Barclays", "HSBC", "Standard Chartered", "Santander UK", "NatWest", "Lloyds Banking Group", "Bank of Scotland", "Bank of India", "State Bank of India",
+        "Bank of Baroda", "Punjab National Bank", "Union Bank of India", "Axis Bank", "ICICI Bank", "HDFC Bank", "Canara Bank", "Indian Overseas Bank", "UCO Bank", "United Bank for Africa"
+    ],
+    "Aus": [
+        "Commonwealth Bank", "Westpac", "ANZ", "National Australia Bank", "Macquarie Bank", "Bendigo Bank", "Bank of Queensland", "Bank Australia", "Bank of Sydney", "Bank of China Australia",
+        "HSBC Australia", "ING Australia", "Rabobank Australia", "Judo Bank", "AMP Bank", "Beyond Bank Australia", "Great Southern Bank", "Suncorp Bank", "Bankwest", "St.George Bank",
+        "BankSA", "Bank of Melbourne", "ME Bank", "Ubank", "Up Bank", "Adelaide Bank", "Rural Bank", "Heritage Bank", "People’s Choice", "People First Bank",
+        "RACQ Bank", "Greater Bank", "Newcastle Permanent", "P&N Bank", "BCU Bank", "BankVic", "QBANK", "Queensland Country Bank", "Regional Australia Bank", "Horizon Bank",
+        "Hume Bank", "IMB Bank", "Coastline Bank", "Cairns Bank", "Central Murray Bank", "Bank Orange", "Darling Downs Bank", "Bank First", "BankWAW", "SWSBANK",
+        "The Capricornian Bank", "Unity Bank", "Firefighters Mutual Bank", "Health Professionals Bank", "Teachers Mutual Bank", "UniBank", "Australian Military Bank", "Defence Bank", "Police Bank", "Australian Settlements Limited",
+        "Auswide Bank", "Avenue Bank", "BNK Bank", "First Option Bank", "Gateway Bank", "Maitland Mutual", "MyState Bank", "Orange Credit Union", "Southern Cross Credit Union", "Traditional Credit Union",
+        "Transport Mutual", "Tyro Bank", "WAW Bank", "Woolworths Team Bank", "Bank of us", "The Mutual Bank", "The MAC", "Newcastle Greater Mutual Group", "Norfina", "Revolut Bank Australia",
+        "Arab Bank Australia", "Australian Military Bank", "Bank of America Australia", "JPMorgan Chase Bank Australia", "Deutsche Bank Australia", "DBS Bank Australia", "Mizuho Bank Australia", "MUFG Bank Australia", "Sumitomo Mitsui Banking Corporation", "Standard Chartered Bank Australia",
+        "State Bank of India Australia", "Bank of India Australia", "ICBC Australia", "Agricultural Bank of China Australia", "China Construction Bank Australia", "Bank of Communications Australia", "E.SUN Commercial Bank Australia", "Mega International Commercial Bank", "Taiwan Business Bank Australia", "Taiwan Cooperative Bank Australia"
+    ]
+}
+
 FAQ_TEXT = (
     "❓ *Frequently Asked Questions*\n\n"
     "How to top up?\n"
@@ -173,12 +225,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get("waiting_for_search"):
-        query_text = update.message.text
+        query_text = update.message.text.lower()
         context.user_data["waiting_for_search"] = False
+        
+        results = []
+        for country, banks in BANK_DATASETS.items():
+            for bank in banks:
+                if query_text in bank.lower():
+                    results.append((country, bank))
+        
+        if results:
+            response_msg = f"🔍 Search results for *'{update.message.text}'*:\n\n"
+            for country, bank in results[:20]: # Limit to top 20 matches to avoid message length limits
+                response_msg += f"• [{country}] {bank}\n"
+            if len(results) > 20:
+                response_msg += f"\n*(Showing first 20 of {len(results)} matches)*"
+        else:
+            response_msg = f"🔍 No matching bank leads found for *'{update.message.text}'*."
+
         await update.message.reply_text(
-            f"🔍 Search results for *'{query_text}'*:\n\n"
-            f"Matching available bank lead packages found across USA, UK, Ireland, and Australia.\n"
-            f"Select a category below to proceed:",
+            response_msg + "\n\nSelect a category below to purchase or browse:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🇺🇸 USA BANK LEADS", callback_data="bank_lead:USA")],
