@@ -1,7 +1,7 @@
 import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -171,6 +171,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown", reply_markup=main_menu_kb()
         )
 
+async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.user_data.get("waiting_for_search"):
+        query_text = update.message.text
+        context.user_data["waiting_for_search"] = False
+        await update.message.reply_text(
+            f"🔍 Search results for *'{query_text}'*:\n\n"
+            f"Matching available bank lead packages found across USA, UK, Ireland, and Australia.\n"
+            f"Select a category below to proceed:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🇺🇸 USA BANK LEADS", callback_data="bank_lead:USA")],
+                [InlineKeyboardButton("🇬🇧 UK BANK LEADS", callback_data="bank_lead:UK")],
+                [InlineKeyboardButton("🇮🇪 Ireland Bank Leads", callback_data="bank_lead:Ireland")],
+                [InlineKeyboardButton("🇦🇺 Aus Bank Leads", callback_data="bank_lead:Aus")],
+                [InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]
+            ])
+        )
+
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query   = update.callback_query
     await query.answer()
@@ -291,9 +309,64 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "browse_leads":
         await query.edit_message_text(
-            "🔍 *Browse Leads*\n\nPlease select a lead category below:",
+            "🔍 *Browse Leads*\n\nPlease select a bank lead country or search available leads below:",
             parse_mode="Markdown",
-            reply_markup=main_menu_kb()
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🇺🇸 USA BANK LEADS", callback_data="bank_lead:USA")],
+                [InlineKeyboardButton("🇬🇧 UK BANK LEADS", callback_data="bank_lead:UK")],
+                [InlineKeyboardButton("🇮🇪 Ireland Bank Leads", callback_data="bank_lead:Ireland")],
+                [InlineKeyboardButton("🇦🇺 Aus Bank Leads", callback_data="bank_lead:Aus")],
+                [InlineKeyboardButton("🔍 Search Available Leads", callback_data="bank_search")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]
+            ])
+        )
+
+    elif data.startswith("bank_lead:"):
+        country = data.split(":", 1)[1]
+        context.user_data["bank_country"] = country
+        await query.edit_message_text(
+            f"🏦 *{country} Bank Leads*\n\nSelect a package below:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("1K Leads — £60", callback_data="bank_buy:1K:60")],
+                [InlineKeyboardButton("5K Leads — £200", callback_data="bank_buy:5K:200")],
+                [InlineKeyboardButton("10K Leads — £350", callback_data="bank_buy:10K:350")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="browse_leads")]
+            ])
+        )
+
+    elif data == "bank_search":
+        context.user_data["waiting_for_search"] = True
+        await query.edit_message_text(
+            "🔍 *Search Bank Leads*\n\nPlease type your search keyword (e.g., bank name or keyword) directly in the chat:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ Back", callback_data="browse_leads")]
+            ])
+        )
+
+    elif data.startswith("bank_buy:"):
+        parts = data.split(":")
+        amount = parts[1]
+        price = int(parts[2])
+        country = context.user_data.get("bank_country", "USA")
+        context.user_data["pending_order"] = {
+            "type": f"{country} Bank Leads",
+            "country": country,
+            "amount": amount,
+            "price": price
+        }
+        await query.edit_message_text(
+            f"🛒 *Confirm {country} Bank Leads Order*\n\n"
+            f"📦 Package: {amount}\n"
+            f"💰 Price: £{price}\n\n"
+            f"Your Balance: £{balance}",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
+                [InlineKeyboardButton("👛 Wallet / Top Up", callback_data="wallet")],
+                [InlineKeyboardButton("⬅️ Back", callback_data=f"bank_lead:{country}")]
+            ])
         )
 
     elif data == "wallet":
@@ -508,9 +581,11 @@ def main():
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("adminhelp", adminhelp))
     app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
     logger.info("Bot is running...")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
+
 
