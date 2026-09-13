@@ -60,6 +60,27 @@ SMS_PRICE_LIST = (
 CRYPTO_EXCHANGES = ["Binance","Bybit","Coinbase","OKX","Upbit","Bitget","Kraken","Kucoin"]
 CRYPTO_PRICES    = {"1k":200,"2k":380,"5k":800,"10k":1500,"25k":3000}
 
+# Age Leads Custom Prices (Original + £10)
+AGE_LEADS_PRICES = {
+    "1K": 40,
+    "2K": 64,
+    "3K": 82,
+    "4K": 100,
+    "5K": 110,
+    "10K": 170,
+    "15K": 250,
+    "20K": 310,
+    "25K": 370,
+    "30K": 450,
+    "35K": 500,
+    "40K": 530,
+    "45K": 550,
+    "50K": 570,
+    "100K": 710,
+    "200K": 1010,
+    "500K": 1610,
+}
+
 FAQ_TEXT = (
     "❓ *Frequently Asked Questions*\n\n"
     "How to top up?\n"
@@ -211,23 +232,61 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🇬🇧 United Kingdom", callback_data="age_country:United Kingdom"),
                  InlineKeyboardButton("🇺🇸 United States", callback_data="age_country:United States")],
-                [InlineKeyboardButton("⬅️ Back", callback_data="age_leads")]
+                [InlineKeyboardButton("⬅️ Back", callback_data="age_gender:" + str(context.user_data.get('age_gender')))]
             ])
         )
 
     elif data.startswith("age_country:"):
         country = data.split(":", 1)[1]
         context.user_data["age_country"] = country
-        gender = context.user_data.get("age_gender")
-        age_range = context.user_data.get("age_range")
+        
+        # Build grid for package pricing selection
+        package_buttons = []
+        row = []
+        for pkg, prc in AGE_LEADS_PRICES.items():
+            row.append(InlineKeyboardButton(f"{pkg} — £{prc}", callback_data=f"age_package:{pkg}"))
+            if len(row) == 2:
+                package_buttons.append(row)
+                row = []
+        if row:
+            package_buttons.append(row)
+        package_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="age_range:" + str(context.user_data.get('age_range')))])
+
         await query.edit_message_text(
-            f"✅ *Selection Complete!*\n\n"
-            f"👤 Gender: {gender}\n"
-            f"📅 Age Range: {age_range}\n"
-            f"🌍 Country: {country}\n\n"
+            f"👤 *Gender:* {context.user_data.get('age_gender')}\n"
+            f"📅 *Age Range:* {context.user_data.get('age_range')}\n"
+            f"🌍 *Country:* {country}\n\n"
+            f"📦 *Step 4: Select Package & Price*\n"
             f"Available birth years: 1930-2025",
             parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]])
+            reply_markup=InlineKeyboardMarkup(package_buttons)
+        )
+
+    elif data.startswith("age_package:"):
+        package = data.split(":", 1)[1]
+        price = AGE_LEADS_PRICES.get(package, 0)
+        context.user_data["pending_order"] = {
+            "type": "Age Leads",
+            "gender": context.user_data.get("age_gender"),
+            "age": context.user_data.get("age_range"),
+            "country": context.user_data.get("age_country"),
+            "amount": package,
+            "price": price
+        }
+        await query.edit_message_text(
+            f"🛒 *Confirm Age Leads Order*\n\n"
+            f"👤 Gender: {context.user_data.get('age_gender')}\n"
+            f"📅 Age Range: {context.user_data.get('age_range')}\n"
+            f"🌍 Country: {context.user_data.get('age_country')}\n"
+            f"📦 Package: {package}\n"
+            f"💰 Price: £{price}\n\n"
+            f"Your Balance: £{balance}",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
+                [InlineKeyboardButton("👛 Wallet / Top Up", callback_data="wallet")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="age_country:" + str(context.user_data.get('age_country')))]
+            ])
         )
 
     elif data == "browse_leads":
@@ -454,5 +513,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
