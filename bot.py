@@ -84,16 +84,31 @@ LEDGER_COUNTRIES = [
 ]
 
 HARDWARE_WALLETS = [
-    "Ledger Nano X",
-    "Ledger Nano S Plus",
-    "Trezor Model T",
-    "Trezor Model One",
-    "Keystone Pro",
-    "SafePal S1",
-    "CoolWallet Pro",
-    "Tangem Wallet",
-    "BitBox02",
-    "Ellipal Titan"
+    "Ledger",
+    "Trezor",
+    "SafePal",
+    "Tangem",
+    "Keystone",
+    "Ellipal",
+    "KeepKey",
+    "OneKey",
+    "CoolWallet",
+    "NGRAVE",
+    "BitBox",
+    "GridPlus",
+    "Arculus",
+    "SecuX",
+    "D’CENT",
+    "Blockstream Jade",
+    "Coldcard",
+    "Foundation Passport",
+    "Cypherock",
+    "AirGap",
+    "BC Vault",
+    "Cobo Vault",
+    "Ballet",
+    "Satochip",
+    "SeedSigner"
 ]
 
 LEDGER_PRICES = {
@@ -549,7 +564,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         buttons = []
         for country in LEDGER_COUNTRIES:
             buttons.append([InlineKeyboardButton(country, callback_data=f"ledger_country:{country}")])
-        buttons.append([InlineKeyboardButton("➡️ NEXT", callback_data="crypto_ledger_wallets:0")])
         buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="main_menu")])
 
         await query.edit_message_text(
@@ -561,46 +575,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("ledger_country:"):
         country = data.split(":", 1)[1]
         context.user_data["ledger_country"] = country
+        # Default to page 0 when a country is selected
         await query.edit_message_text(
             f"🌍 *Selected Country:* {country}\n\nNow select hardware wallet brand/product:",
             parse_mode="Markdown",
-            reply_markup=make_single_column_grid(HARDWARE_WALLETS, "ledger_wallet", back="crypto_ledger_countries")
+            reply_markup=get_ledger_wallets_keyboard(0)
         )
 
     elif data.startswith("crypto_ledger_wallets:"):
         page = int(data.split(":")[1])
-        per_page = 5
-        total_pages = (len(HARDWARE_WALLETS) + per_page - 1) // per_page
-        if total_pages < 1:
-            total_pages = 1
-        if page >= total_pages:
-            page = total_pages - 1
-        if page < 0:
-            page = 0
-
-        start_idx = page * per_page
-        end_idx = start_idx + per_page
-        current_chunk = HARDWARE_WALLETS[start_idx:end_idx]
-
-        wallet_buttons = []
-        for wallet in current_chunk:
-            wallet_buttons.append([InlineKeyboardButton(wallet, callback_data=f"ledger_wallet:{wallet}")])
-
-        nav_buttons = []
-        if page > 0:
-            nav_buttons.append(InlineKeyboardButton("⬅️ BACK", callback_data=f"crypto_ledger_wallets:{page - 1}"))
-        if page < total_pages - 1:
-            nav_buttons.append(InlineKeyboardButton("➡️ NEXT", callback_data=f"crypto_ledger_wallets:{page + 1}"))
-
-        if nav_buttons:
-            wallet_buttons.append(nav_buttons)
-
-        wallet_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="crypto_ledger_countries")])
-
         await query.edit_message_text(
-            f"💼 *Crypto Ledger* — Hardware Wallets (Page {page + 1}/{total_pages}):",
+            f"🌍 *Selected Country:* {context.user_data.get('ledger_country', 'N/A')}\n\nNow select hardware wallet brand/product:",
             parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup(wallet_buttons)
+            reply_markup=get_ledger_wallets_keyboard(page)
         )
 
     elif data.startswith("ledger_wallet:"):
@@ -610,7 +597,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         price_buttons = []
         for pkg, prc in LEDGER_PRICES.items():
             price_buttons.append([InlineKeyboardButton(f"{pkg} = £{prc:,}", callback_data=f"ledger_price:{pkg}")])
-        price_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="crypto_ledger_countries")])
+        price_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=f"ledger_country:{context.user_data.get('ledger_country', 'UK')}")])
 
         await query.edit_message_text(
             f"💼 *Hardware Wallet:* {wallet_brand}\n\nSelect Package & Price:",
@@ -881,6 +868,36 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
         )
 
+def get_ledger_wallets_keyboard(page: int) -> InlineKeyboardMarkup:
+    per_page = 5
+    total_pages = (len(HARDWARE_WALLETS) + per_page - 1) // per_page
+    if total_pages < 1:
+        total_pages = 1
+    if page >= total_pages:
+        page = total_pages - 1
+    if page < 0:
+        page = 0
+
+    start_idx = page * per_page
+    end_idx = start_idx + per_page
+    current_chunk = HARDWARE_WALLETS[start_idx:end_idx]
+
+    wallet_buttons = []
+    for wallet in current_chunk:
+        wallet_buttons.append([InlineKeyboardButton(wallet, callback_data=f"ledger_wallet:{wallet}")])
+
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(InlineKeyboardButton("⬅️ BACK", callback_data=f"crypto_ledger_wallets:{page - 1}"))
+    if page < total_pages - 1:
+        nav_buttons.append(InlineKeyboardButton("➡️ NEXT", callback_data=f"crypto_ledger_wallets:{page + 1}"))
+
+    if nav_buttons:
+        wallet_buttons.append(nav_buttons)
+
+    wallet_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="crypto_ledger_countries")])
+    return InlineKeyboardMarkup(wallet_buttons)
+
 # ─── ADMIN COMMANDS ───
 async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not is_admin(update):
@@ -971,5 +988,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
