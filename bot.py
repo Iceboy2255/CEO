@@ -56,7 +56,20 @@ SMS_PRICE_LIST = (
     "1M+ — Message {admin}"
 )
 
-CRYPTO_EXCHANGES = ["Binance", "Bybit", "Coinbase", "OKX", "Upbit", "Bitget", "Kraken", "Kucoin"]
+_base_crypto_exchanges = ["Binance", "Bybit", "Coinbase", "OKX", "Upbit", "Bitget", "Kraken", "Kucoin"]
+_new_crypto_exchanges = [
+    "MEXC", "Gate", "Crypto.com", "HTX", "BitMart", "BingX", "Bitfinex", "Gemini",
+    "Phemex", "CoinEx", "LBank", "XT.com", "Bitrue", "CoinW", "Toobit", "Deepcoin",
+    "AscendEX", "Poloniex", "BitMEX", "CEX.IO", "WhiteBIT", "Bitstamp", "Bitso",
+    "Bithumb", "Coinone", "Korbit", "Deribit", "BitFlyer", "Coincheck", "Uphold",
+    "eToro", "Robinhood Crypto", "Quidax", "Busha", "VALR", "Yellow Card", "Luno"
+]
+# Ensure no duplicates while combining and preserving order
+CRYPTO_EXCHANGES = []
+for ex in _base_crypto_exchanges + _new_crypto_exchanges:
+    if ex not in CRYPTO_EXCHANGES:
+        CRYPTO_EXCHANGES.append(ex)
+
 CRYPTO_PRICES    = {"1k": 200, "2k": 380, "5k": 800, "10k": 1500, "25k": 3000}
 
 AGE_LEADS_PRICES = {
@@ -356,7 +369,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             ])
         )
 
-    # ── UPDATED BROWSE LEADS FLOW: Browse Leads -> Select Bank -> Select Filter Ages -> Show Price -> Continue ──
+    # ── BROWSE LEADS FLOW ──
     elif data == "browse_leads":
         await query.edit_message_text(
             "🔍 *Browse Leads*\n\nPlease select a bank lead country below to view all available banks:",
@@ -419,7 +432,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data["bank_country"] = country
         context.user_data["bank_name"] = bank_name
         
-        # Step 3 & 4: After selecting the bank/category, show Select Filter Ages before showing any price
         age_buttons = []
         for age_opt in BANK_FILTER_AGES:
             age_buttons.append([InlineKeyboardButton(age_opt, callback_data=f"bank_age:{age_opt}")])
@@ -438,7 +450,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         bank_name = context.user_data.get("bank_name", "Bank")
         country = context.user_data.get("bank_country", "USA")
         
-        # Step 5: Once user selects preferred age range, show price at top of the page & continue package selection flow
         package_buttons = []
         for pkg, prc in BANK_LEADS_PRICES.items():
             package_buttons.append([InlineKeyboardButton(f"{pkg} — £{prc}", callback_data=f"bank_pkg:{pkg}:{prc}")])
@@ -490,7 +501,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data["waiting_for_search"] = True
         await query.edit_message_text(
             "🔍 *Search Bank Leads*\n\nPlease type your search keyword (e.g., bank name) directly in the chat:",
-            parse_mode="Markdown",
+            parse_Mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("⬅️ Back", callback_data="browse_leads")]
             ])
@@ -636,11 +647,40 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             ])
         )
 
-    elif data == "crypto_leads":
+    elif data == "crypto_leads" or data.startswith("crypto_page:"):
+        page = int(data.split(":")[1]) if data.startswith("crypto_page:") else 0
+        per_page = 10
+        total_pages = (len(CRYPTO_EXCHANGES) + per_page - 1) // per_page
+        if total_pages < 1:
+            total_pages = 1
+        if page >= total_pages:
+            page = total_pages - 1
+        if page < 0:
+            page = 0
+            
+        start_idx = page * per_page
+        end_idx = start_idx + per_page
+        current_chunk = CRYPTO_EXCHANGES[start_idx:end_idx]
+        
+        crypto_buttons = []
+        for exchange in current_chunk:
+            crypto_buttons.append([InlineKeyboardButton(exchange, callback_data=f"crypto_exchange:{exchange}")])
+            
+        nav_buttons = []
+        if page > 0:
+            nav_buttons.append(InlineKeyboardButton("⬅️ BACK", callback_data=f"crypto_page:{page - 1}"))
+        if page < total_pages - 1:
+            nav_buttons.append(InlineKeyboardButton("➡️ NEXT", callback_data=f"crypto_page:{page + 1}"))
+            
+        if nav_buttons:
+            crypto_buttons.append(nav_buttons)
+            
+        crypto_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="main_menu")])
+
         await query.edit_message_text(
-            f"💰 *Current Balance: £{balance}*\n\nSelect Crypto Exchange:",
+            f"💰 *Current Balance: £{balance}*\n\nSelect Crypto Exchange (Page {page + 1}/{total_pages}):",
             parse_mode="Markdown",
-            reply_markup=make_single_column_grid(CRYPTO_EXCHANGES, "crypto_exchange", back="main_menu")
+            reply_markup=InlineKeyboardMarkup(crypto_buttons)
         )
 
     elif data.startswith("crypto_exchange:"):
