@@ -72,6 +72,8 @@ BANK_LEADS_PRICES = {
     "20K": 1150, "25K": 1550, "30K": 1750, "50K": 2050, "100K": 3050,
 }
 
+BANK_FILTER_AGES = ["50–80", "60–80", "50–70", "40–70", "40–60", "30–60", "30–50", "20–50"]
+
 BANK_LEADS_DATA = {
     "USA": [
         "JPMorgan Chase", "Bank of America", "Wells Fargo", "Citibank", "U.S. Bank", "PNC Bank", "Truist Bank", "Capital One", "TD Bank", "BMO Bank",
@@ -173,18 +175,6 @@ def make_single_column_grid(items: list, prefix: str, back: str = "main_menu") -
     buttons = []
     for item in items:
         buttons.append([InlineKeyboardButton(str(item), callback_data=f"{prefix}:{item}")])
-    buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=back)])
-    return InlineKeyboardMarkup(buttons)
-
-def make_grid(items: list, prefix: str, cols: int = 2, back: str = "main_menu") -> InlineKeyboardMarkup:
-    buttons, row = [], []
-    for item in items:
-        row.append(InlineKeyboardButton(str(item), callback_data=f"{prefix}:{item}"))
-        if len(row) == cols:
-            buttons.append(row)
-            row = []
-    if row:
-        buttons.append(row)
     buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=back)])
     return InlineKeyboardMarkup(buttons)
 
@@ -366,7 +356,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             ])
         )
 
-    # ── UPDATED BROWSE LEADS FLOW IMPLEMENTING STEPS 1-6 ──
+    # ── UPDATED BROWSE LEADS FLOW: Browse Leads -> Select Bank -> Select Filter Ages -> Show Price -> Continue ──
     elif data == "browse_leads":
         await query.edit_message_text(
             "🔍 *Browse Leads*\n\nPlease select a bank lead country below to view all available banks:",
@@ -403,7 +393,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         
         bank_buttons = []
         for bank in current_chunk:
-            # Step 2: User selects any product/bank item
             bank_buttons.append([InlineKeyboardButton(bank, callback_data=f"bank_select:{country}:{bank}")])
             
         prev_page = (page - 1) % total_pages
@@ -430,75 +419,67 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data["bank_country"] = country
         context.user_data["bank_name"] = bank_name
         
-        # Step 3: After selecting a product -> go to the Price page (incorporating options/prices)
-        package_buttons = []
-        for pkg, prc in BANK_LEADS_PRICES.items():
-            package_buttons.append([InlineKeyboardButton(f"{pkg} — £{prc}", callback_data=f"bank_pkg_select:{pkg}:{prc}")])
-        
-        # Step 4: On the Price page there must be a Next button. Always include the Next button.
-        package_buttons.append([InlineKeyboardButton("➡️ Next", callback_data="bank_price_next")])
-        package_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=f"bank_lead:{country}:0")])
+        # Step 3 & 4: After selecting the bank/category, show Select Filter Ages before showing any price
+        age_buttons = []
+        for age_opt in BANK_FILTER_AGES:
+            age_buttons.append([InlineKeyboardButton(age_opt, callback_data=f"bank_age:{age_opt}")])
+        age_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=f"bank_lead:{country}:0")])
         
         await query.edit_message_text(
-            f"🏦 *Product Selected:* {bank_name} ({country})\n\n"
-            f"📋 *Price Page*\nSelect your desired package configuration and press Next:",
+            f"🏦 *Bank:* {bank_name} ({country})\n\n"
+            f"📅 *Select Filter Ages*:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(age_buttons)
+        )
+
+    elif data.startswith("bank_age:"):
+        age_opt = data.split(":", 1)[1]
+        context.user_data["bank_dob"] = age_opt
+        bank_name = context.user_data.get("bank_name", "Bank")
+        country = context.user_data.get("bank_country", "USA")
+        
+        # Step 5: Once user selects preferred age range, show price at top of the page & continue package selection flow
+        package_buttons = []
+        for pkg, prc in BANK_LEADS_PRICES.items():
+            package_buttons.append([InlineKeyboardButton(f"{pkg} — £{prc}", callback_data=f"bank_pkg:{pkg}:{prc}")])
+        package_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=f"bank_select:{country}:{bank_name}")])
+        
+        await query.edit_message_text(
+            f"🏦 *Bank:* {bank_name} ({country})\n"
+            f"📅 *Age Range Filter:* {age_opt}\n\n"
+            f"💰 *Price Options — Select Package:*",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(package_buttons)
         )
 
-    elif data.startswith("bank_pkg_select:"):
+    elif data.startswith("bank_pkg:"):
         parts = data.split(":")
         package = parts[1]
         price = int(parts[2])
-        context.user_data["selected_bank_pkg"] = package
-        context.user_data["selected_bank_price"] = price
         bank_name = context.user_data.get("bank_name", "Bank")
+        dob = context.user_data.get("bank_dob", "N/A")
         country = context.user_data.get("bank_country", "USA")
-
-        package_buttons = []
-        for pkg, prc in BANK_LEADS_PRICES.items():
-            label = f"✅ {pkg} — £{prc}" if pkg == package else f"{pkg} — £{prc}"
-            package_buttons.append([InlineKeyboardButton(label, callback_data=f"bank_pkg_select:{pkg}:{prc}")])
-        
-        # Step 4 & 5: Next button is present here as well
-        package_buttons.append([InlineKeyboardButton("➡️ Next", callback_data="bank_price_next")])
-        package_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=f"bank_select:{country}:{bank_name}")])
-
-        await query.edit_message_text(
-            f"🏦 *Product:* {bank_name} ({country})\n"
-            f"📦 Selected Package: *{package}* (£{price})\n\n"
-            f"Press Next to continue:",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup(package_buttons)
-        )
-
-    elif data == "bank_price_next":
-        # Step 5: When user clicks Next -> go to the Top (Top Up / Checkout / Confirmation) page
-        bank_name = context.user_data.get("bank_name", "Bank")
-        country = context.user_data.get("bank_country", "USA")
-        package = context.user_data.get("selected_bank_pkg", "1K")
-        price = context.user_data.get("selected_bank_price", BANK_LEADS_PRICES.get("1K", 150))
         
         context.user_data["pending_order"] = {
             "type": f"{country} Bank Leads",
             "bank": bank_name,
-            "dob": "N/A",
+            "dob": dob,
             "amount": package,
             "price": price
         }
-
-        # Step 6: Keep a Back button on every page
+        
         await query.edit_message_text(
-            f"🛒 *Top / Checkout Page*\n\n"
-            f"🏦 Bank: {bank_name} ({country})\n"
+            f"🛒 *Confirm Bank Leads Order*\n\n"
+            f"🏦 Bank: {bank_name}\n"
+            f"📅 Age Filter: {dob}\n"
             f"📦 Package: {package}\n"
             f"💰 Price: £{price}\n\n"
-            f"Your Wallet Balance: £{balance}",
+            f"Your Balance: £{balance}",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
                 [InlineKeyboardButton("👛 Wallet / Top Up", callback_data="wallet")],
-                [InlineKeyboardButton("⬅️ Back", callback_data=f"bank_select:{country}:{bank_name}")]
+                [InlineKeyboardButton("⬅️ Back", callback_data=f"bank_age:{dob}")]
             ])
         )
 
@@ -781,7 +762,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     for user_id in all_users:
         try:
-            await context.bot.send_message(chat_id=user_id, text=message_text, parse_mode="Markdown")
+            await context.bot.send_message(chat_id=user_id, text=message_text, parse_motion="Markdown")
             success_count += 1
         except Exception as e:
             logger.error("Broadcast error for user %s: %s", user_id, e)
