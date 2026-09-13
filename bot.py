@@ -1,5 +1,6 @@
 import os
 import logging
+import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
@@ -30,6 +31,7 @@ TOPUP_AMOUNTS = [50, 80, 120, 150, 180, 220, 245, 260, 300, 350, 500, 800, 1000,
 # ─── PRODUCT CATALOG & PRICING CONFIGURATIONS ───
 EMAIL_COUNTRIES = ["AUSTRALIA", "BRAZIL", "CANADA", "FRANCE", "GERMANY", "HUNGARY", "ITALY", "SPAIN", "UK", "USA"]
 EMAIL_PROVIDERS = ["Business", "Crypto", "Gaming", "Music", "Shopping", "Social Media"]
+EMAIL_CRYPTO_PROVIDERS = ["Robinhood", "Binance", "Coinbase", "Crypto.com"]
 EMAIL_PRICES    = {"1k": 90, "5k": 300, "10k": 450, "25k": 800, "30k": 900, "75k": 1500}
 EMAIL_PRICE_LIST = (
     "📋 *Email Leads Price List*\n"
@@ -202,17 +204,20 @@ FAQ_TEXT = (
 )
 
 # ─── HELPER FUNCTIONS ───
-async def console_log(context: ContextTypes.DEFAULT_TYPE, user, action: str, detail: str = "") -> None:
+async def _async_console_log(bot, chat_id, text):
     try:
-        if not CONSOLE_CHAT:
-            return
-        username = f"@{user.username}" if user.username else user.first_name
-        msg = f"{username} ({user.id}) {action}"
-        if detail:
-            msg += f" — {detail}"
-        await context.bot.send_message(chat_id=CONSOLE_CHAT, text=msg)
+        await bot.send_message(chat_id=chat_id, text=text)
     except Exception as e:
         logger.error("Console log error: %s", e)
+
+async def console_log(context: ContextTypes.DEFAULT_TYPE, user, action: str, detail: str = "") -> None:
+    if not CONSOLE_CHAT:
+        return
+    username = f"@{user.username}" if user.username else user.first_name
+    msg = f"{username} ({user.id}) {action}"
+    if detail:
+        msg += f" — {detail}"
+    asyncio.create_task(_async_console_log(context.bot, CONSOLE_CHAT, msg))
 
 def is_admin(update: Update) -> bool:
     user_id = update.effective_user.id
@@ -235,7 +240,6 @@ def set_user_balance(context: ContextTypes.DEFAULT_TYPE, user_id: int, amount: i
     context.bot_data["balances"][user_id] = amount
 
 def make_single_column_grid(items: list, prefix: str, back: str = "main_menu") -> InlineKeyboardMarkup:
-    """Creates a full-width vertical stack layout (one button per row) as requested."""
     buttons = []
     for item in items:
         buttons.append([InlineKeyboardButton(str(item), callback_data=f"{prefix}:{item}")])
@@ -243,7 +247,6 @@ def make_single_column_grid(items: list, prefix: str, back: str = "main_menu") -
     return InlineKeyboardMarkup(buttons)
 
 def main_menu_kb() -> InlineKeyboardMarkup:
-    """Full-width buttons, one under the other, matching the user's explicit design flow style."""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("Age Leads + Country", callback_data="age_leads")],
         [InlineKeyboardButton("Browse Leads",       callback_data="browse_leads")],
@@ -575,7 +578,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("ledger_country:"):
         country = data.split(":", 1)[1]
         context.user_data["ledger_country"] = country
-        # Default to page 0 when a country is selected
         await query.edit_message_text(
             f"🌍 *Selected Country:* {country}\n\nNow select hardware wallet brand/product:",
             parse_mode="Markdown",
@@ -685,11 +687,40 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             except Exception as e:
                 logger.error("Admin notify error: %s", e)
 
-    elif data == "email_leads":
+    elif data == "email_leads" or data.startswith("email_page:"):
+        page = int(data.split(":")[1]) if data.startswith("email_page:") else 0
+        per_page = 5
+        total_pages = (len(EMAIL_COUNTRIES) + per_page - 1) // per_page
+        if total_pages < 1:
+            total_pages = 1
+        if page >= total_pages:
+            page = total_pages - 1
+        if page < 0:
+            page = 0
+            
+        start_idx = page * per_page
+        end_idx = start_idx + per_page
+        current_chunk = EMAIL_COUNTRIES[start_idx:end_idx]
+        
+        email_buttons = []
+        for country in current_chunk:
+            email_buttons.append([InlineKeyboardButton(country, callback_data=f"email_country:{country}")])
+            
+        nav_buttons = []
+        if page > 0:
+            nav_buttons.append(InlineKeyboardButton("⬅️ BACK", callback_data=f"email_page:{page - 1}"))
+        if page < total_pages - 1:
+            nav_buttons.append(InlineKeyboardButton("➡️ NEXT", callback_data=f"email_page:{page + 1}"))
+            
+        if nav_buttons:
+            email_buttons.append(nav_buttons)
+            
+        email_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="main_menu")])
+
         await query.edit_message_text(
-            f"💰 *Current Balance: £{balance}*\n\n" + EMAIL_PRICE_LIST.format(admin=admin) + "\n\n🌍 Select Country:",
+            f"💰 *Current Balance: £{balance}*\n\n" + EMAIL_PRICE_LIST.format(admin=admin) + f"\n\n🌍 Select Country (Page {page + 1}/{total_pages}):",
             parse_mode="Markdown",
-            reply_markup=make_single_column_grid(EMAIL_COUNTRIES, "email_country", back="main_menu")
+            reply_markup=InlineKeyboardMarkup(email_buttons)
         )
 
     elif data.startswith("email_country:"):
@@ -702,10 +733,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     elif data.startswith("email_provider:"):
         provider = data.split(":", 1)[1]
-        context.user_data["email_provider"] = provider
+        country = context.user_data.get("email_country", EMAIL_COUNTRIES[0])
+        if provider == "Crypto":
+            await query.edit_message_text(
+                "🪙 *Select Crypto Email Category*:",
+                parse_mode="Markdown",
+                reply_markup=make_single_column_grid(EMAIL_CRYPTO_PROVIDERS, "email_subprovider", back=f"email_country:{country}")
+            )
+        else:
+            context.user_data["email_provider"] = provider
+            await query.edit_message_text(
+                "📦 Select Quantity:", parse_mode="Markdown",
+                reply_markup=make_single_column_grid([f"{k} - £{v}" for k, v in EMAIL_PRICES.items()], "email_amount", back=f"email_country:{country}")
+            )
+
+    elif data.startswith("email_subprovider:"):
+        sub_provider = data.split(":", 1)[1]
+        context.user_data["email_provider"] = f"Crypto - {sub_provider}"
         await query.edit_message_text(
             "📦 Select Quantity:", parse_mode="Markdown",
-            reply_markup=make_single_column_grid([f"{k} - £{v}" for k, v in EMAIL_PRICES.items()], "email_amount", back="email_leads")
+            reply_markup=make_single_column_grid([f"{k} - £{v}" for k, v in EMAIL_PRICES.items()], "email_amount", back="email_provider:Crypto")
         )
 
     elif data.startswith("email_amount:"):
@@ -856,10 +903,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         )
         
         if ADMIN_CHAT_ID:
-            await context.bot.send_message(
-                chat_id=ADMIN_CHAT_ID,
-                text=f"🛒 *NEW PURCHASE*\nUser: @{user.username} (`{user.id}`)\nItem: {order.get('type')} ({order.get('amount')}) — £{price}"
-            )
+            asyncio.create_task(_async_console_log(context.bot, ADMIN_CHAT_ID, f"🛒 *NEW PURCHASE*\nUser: @{user.username} (`{user.id}`)\nItem: {order.get('type')} ({order.get('amount')}) — £{price}"))
 
     elif data == "faq":
         await query.edit_message_text(
@@ -955,7 +999,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     for user_id in all_users:
         try:
-            await context.bot.send_message(chat_id=user_id, text=message_text, parse_motion="Markdown")
+            await context.bot.send_message(chat_id=user_id, text=message_text, parse_mode="Markdown")
             success_count += 1
         except Exception as e:
             logger.error("Broadcast error for user %s: %s", user_id, e)
