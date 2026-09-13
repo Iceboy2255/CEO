@@ -119,11 +119,13 @@ def make_grid(items, prefix, cols=2, back="main_menu"):
 
 def main_menu_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📧 Email Leads", callback_data="email_leads"),
-         InlineKeyboardButton("📱 SMS Leads",   callback_data="sms_leads")],
-        [InlineKeyboardButton("💰 Crypto Leads", callback_data="crypto_leads")],
-        [InlineKeyboardButton("👛 Wallet",       callback_data="wallet"),
-         InlineKeyboardButton("❓ FAQ",          callback_data="faq")],
+        [InlineKeyboardButton("Age Leads + Country", callback_data="age_leads"),
+         InlineKeyboardButton("Browse Leads",       callback_data="browse_leads")],
+        [InlineKeyboardButton("📧 Email Leads",     callback_data="email_leads"),
+         InlineKeyboardButton("📱 SMS Leads",       callback_data="sms_leads")],
+        [InlineKeyboardButton("💰 Crypto Leads",    callback_data="crypto_leads"),
+         InlineKeyboardButton("👛 Wallet",          callback_data="wallet"),
+         InlineKeyboardButton("❓ FAQ",             callback_data="faq")],
     ])
 
 # ─── HANDLERS ───
@@ -172,6 +174,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n\nPlease choose an option below:",
             parse_mode="Markdown", reply_markup=main_menu_kb()
+        )
+
+    elif data == "age_leads":
+        await query.edit_message_text(
+            "📅 *Age Leads + Country*\n\nFeature coming soon or select from available categories.",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
+        )
+
+    elif data == "browse_leads":
+        await query.edit_message_text(
+            "🔍 *Browse Leads*\n\nPlease select a lead category below:",
+            parse_mode="Markdown",
+            reply_markup=main_menu_kb()
         )
 
     elif data == "wallet":
@@ -253,6 +269,53 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["pending_order"] = {"type": "Email Leads", "country": context.user_data.get("email_country"), "provider": context.user_data.get("email_provider"), "amount": amount, "price": price}
         await query.edit_message_text(f"Confirm order for {amount} Email leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="main_menu")]]))
 
+    elif data == "sms_leads":
+        await query.edit_message_text(
+            f"💰 *Current Balance: £{balance}*\n\n" + SMS_PRICE_LIST.format(admin=admin) + "\n\n🌍 Select Country:",
+            parse_mode="Markdown",
+            reply_markup=make_grid(SMS_COUNTRIES, "sms_country", cols=2, back="main_menu")
+        )
+
+    elif data.startswith("sms_country:"):
+        country = data.split(":", 1)[1]
+        context.user_data["sms_country"] = country
+        carriers = SMS_CARRIERS.get(country, ["Default"])
+        await query.edit_message_text(f"🌍 *Country:* {country}\n\nSelect Carrier:", parse_mode="Markdown",
+            reply_markup=make_grid(carriers, "sms_carrier", cols=2, back="sms_leads"))
+
+    elif data.startswith("sms_carrier:"):
+        carrier = data.split(":", 1)[1]
+        context.user_data["sms_carrier"] = carrier
+        await query.edit_message_text("📦 Select Quantity:", parse_mode="Markdown",
+            reply_markup=make_grid([f"{k} - £{v}" for k, v in SMS_PRICES.items() if k in SMS_AMOUNTS], "sms_amount", cols=1, back="sms_leads"))
+
+    elif data.startswith("sms_amount:"):
+        selected = data.split(":", 1)[1]
+        amount   = selected.split(" - ")[0]
+        price    = SMS_PRICES.get(amount, 0)
+        context.user_data["pending_order"] = {"type": "SMS Leads", "country": context.user_data.get("sms_country"), "provider": context.user_data.get("sms_carrier"), "amount": amount, "price": price}
+        await query.edit_message_text(f"Confirm order for {amount} SMS leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="main_menu")]]))
+
+    elif data == "crypto_leads":
+        await query.edit_message_text(
+            f"💰 *Current Balance: £{balance}*\n\nSelect Crypto Exchange:",
+            parse_mode="Markdown",
+            reply_markup=make_grid(CRYPTO_EXCHANGES, "crypto_exchange", cols=2, back="main_menu")
+        )
+
+    elif data.startswith("crypto_exchange:"):
+        exchange = data.split(":", 1)[1]
+        context.user_data["crypto_exchange"] = exchange
+        await query.edit_message_text("📦 Select Quantity:", parse_mode="Markdown",
+            reply_markup=make_grid([f"{k} - £{v}" for k, v in CRYPTO_PRICES.items()], "crypto_amount", cols=1, back="crypto_leads"))
+
+    elif data.startswith("crypto_amount:"):
+        selected = data.split(":", 1)[1]
+        amount   = selected.split(" - ")[0]
+        price    = CRYPTO_PRICES.get(amount, 0)
+        context.user_data["pending_order"] = {"type": "Crypto Leads", "country": "CRYPTO", "provider": context.user_data.get("crypto_exchange"), "amount": amount, "price": price}
+        await query.edit_message_text(f"Confirm order for {amount} Crypto leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="main_menu")]]))
+
     elif data == "order_confirm":
         order = context.user_data.get("pending_order", {})
         price = order.get("price", 0)
@@ -300,6 +363,27 @@ async def sendto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Failed: {e}")
 
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update): return
+    message_text = " ".join(context.args)
+    if not message_text:
+        await update.message.reply_text("Usage: /broadcast <message>")
+        return
+    
+    all_users = context.bot_data.get("all_users", set())
+    success_count = 0
+    fail_count = 0
+
+    for user_id in all_users:
+        try:
+            await context.bot.send_message(chat_id=user_id, text=message_text, parse_mode="Markdown")
+            success_count += 1
+        except Exception as e:
+            logger.error(f"Broadcast error for user {user_id}: {e}")
+            fail_count += 1
+
+    await update.message.reply_text(f"📢 Broadcast complete.\nSuccessfully sent: {success_count}\nFailed: {fail_count}")
+
 async def adminhelp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update): return
     await update.message.reply_text(
@@ -315,6 +399,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("userbal", userbal))
     app.add_handler(CommandHandler("sendto", sendto))
+    app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("adminhelp", adminhelp))
     app.add_handler(CallbackQueryHandler(button_handler))
     logger.info("Bot is running...")
@@ -322,3 +407,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
