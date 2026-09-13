@@ -6,7 +6,8 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN         = os.environ.get("BOT_TOKEN")
+# Replace with your actual Bot Father token below
+TOKEN         = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 ADMIN_USERNAME = "@hostingceo8"
 ADMIN_CHAT_ID  = os.environ.get("ADMIN_CHAT_ID", "")
 CONSOLE_CHAT   = os.environ.get("CONSOLE_CHAT_ID", "")
@@ -592,6 +593,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
