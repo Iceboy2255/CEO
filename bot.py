@@ -15,6 +15,9 @@ ETH_ADDRESS    = os.environ.get("ETH_ADDRESS", "YOUR_ETH_ADDRESS")
 SOL_ADDRESS    = os.environ.get("SOL_ADDRESS", "YOUR_SOL_ADDRESS")
 LTC_ADDRESS    = os.environ.get("LTC_ADDRESS", "YOUR_LTC_ADDRESS")
 
+# Add your Telegram User ID(s) here to grant admin access to new commands
+ADMIN_IDS      = [123456789]
+
 WALLET_ADDRESSES = {
     "Bitcoin (BTC)":         BTC_ADDRESS,
     "Ethereum (ETH) / USDT": ETH_ADDRESS,
@@ -134,9 +137,14 @@ async def console_log(context, user, action, detail=""):
         logger.error(f"Console log error: {e}")
 
 def is_admin(update):
-    user_id = str(update.effective_user.id)
+    user_id = update.effective_user.id
     chat_id = str(update.effective_chat.id)
-    return user_id == str(ADMIN_CHAT_ID) or chat_id == str(CONSOLE_CHAT)
+    return user_id in ADMIN_IDS or str(user_id) == str(ADMIN_CHAT_ID) or chat_id == str(CONSOLE_CHAT)
+
+def track_user(context, user):
+    if "all_users" not in context.bot_data:
+        context.bot_data["all_users"] = set()
+    context.bot_data["all_users"].add(user.id)
 
 def make_grid(items, prefix, cols=2, back="main_menu"):
     buttons, row = [], []
@@ -172,6 +180,7 @@ async def show_tos(query):
 # ─── START ───
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
+    track_user(context, user)
     if "balance" not in context.user_data:
         context.user_data["balance"] = 0
     await console_log(context, user, "opened the bot")
@@ -196,8 +205,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query   = update.callback_query
     await query.answer()
     data    = query.data
-    balance = context.user_data.get("balance", 0)
     user    = query.from_user
+    track_user(context, user)
+    balance = context.user_data.get("balance", 0)
     admin   = ADMIN_USERNAME
 
     if data == "tos_accept":
@@ -442,6 +452,43 @@ async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
     await update.message.reply_text(f"Chat ID: {chat.id}\nType: {chat.type}\nTitle: {getattr(chat,'title','N/A')}")
 
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update):
+        return
+    message_text = " ".join(context.args)
+    if not message_text:
+        await update.message.reply_text("Usage: /broadcast <message>")
+        return
+    
+    all_users = context.bot_data.get("all_users", set())
+    success_count = 0
+    fail_count = 0
+
+    for user_id in all_users:
+        try:
+            await context.bot.send_message(chat_id=user_id, text=message_text, parse_mode="Markdown")
+            success_count += 1
+        except Exception as e:
+            logger.error(f"Broadcast error for user {user_id}: {e}")
+            fail_count += 1
+
+    await update.message.reply_text(f"📢 Broadcast complete.\nSuccessfully sent: {success_count}\nFailed: {fail_count}")
+
+async def sendto(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update):
+        return
+    if len(context.args) < 2:
+        await update.message.reply_text("Usage: /sendto <user_id> <message>")
+        return
+    
+    try:
+        target_id = int(context.args[0])
+        message_text = " ".join(context.args[1:])
+        await context.bot.send_message(chat_id=target_id, text=message_text, parse_mode="Markdown")
+        await update.message.reply_text(f"✅ Message successfully sent to user {target_id}.")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Failed to send message to user.\nError: {e}")
+
 async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update):
         return
@@ -521,6 +568,8 @@ async def adminhelp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/addbalance <user_id> <amount> — Add balance\n"
         "/removebalance <user_id> <amount> — Remove balance\n"
         "/checkbalance <user_id> — Check balance\n"
+        "/broadcast <message> — Broadcast message to all users\n"
+        "/sendto <user_id> <message> — Send direct message to a user\n"
         "/getid — Get chat ID\n"
         "/adminhelp — Show this menu"
     )
@@ -530,6 +579,8 @@ def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start",         start))
     app.add_handler(CommandHandler("getid",         get_id))
+    app.add_handler(CommandHandler("broadcast",     broadcast))
+    app.add_handler(CommandHandler("sendto",        sendto))
     app.add_handler(CommandHandler("userbal",       userbal))
     app.add_handler(CommandHandler("addbalance",    addbalance))
     app.add_handler(CommandHandler("removebalance", removebalance))
@@ -541,3 +592,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
