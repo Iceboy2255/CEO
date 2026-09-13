@@ -206,23 +206,26 @@ FAQ_TEXT = (
 # ─── HELPER FUNCTIONS ───
 async def _async_console_log(bot, chat_id, text):
     try:
-        await bot.send_message(chat_id=chat_id, text=text)
+        chat_to_use = chat_id or ADMIN_CHAT_ID
+        if chat_to_use:
+            await bot.send_message(chat_id=chat_to_use, text=text, parse_mode="Markdown")
     except Exception as e:
         logger.error("Console log error: %s", e)
 
 async def console_log(context: ContextTypes.DEFAULT_TYPE, user, action: str, detail: str = "") -> None:
-    if not CONSOLE_CHAT:
+    target_chat = CONSOLE_CHAT or ADMIN_CHAT_ID
+    if not target_chat:
         return
     username = f"@{user.username}" if user.username else user.first_name
-    msg = f"{username} ({user.id}) {action}"
+    msg = f"{username} (`{user.id}`) {action}"
     if detail:
         msg += f" — {detail}"
-    asyncio.create_task(_async_console_log(context.bot, CONSOLE_CHAT, msg))
+    asyncio.create_task(_async_console_log(context.bot, target_chat, msg))
 
 def is_admin(update: Update) -> bool:
     user_id = update.effective_user.id
     chat_id = str(update.effective_chat.id)
-    return user_id in ADMIN_IDS or str(user_id) == str(ADMIN_CHAT_ID) or chat_id == str(CONSOLE_CHAT)
+    return user_id in ADMIN_IDS or str(user_id) == str(ADMIN_CHAT_ID) or str(user_id) == str(CONSOLE_CHAT) or chat_id == str(CONSOLE_CHAT)
 
 def track_user(context: ContextTypes.DEFAULT_TYPE, user) -> None:
     if "all_users" not in context.bot_data:
@@ -263,7 +266,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     track_user(context, user)
     balance = get_user_balance(context, user.id)
-    await console_log(context, user, "opened the bot")
+    await console_log(context, user, "started the bot")
     
     if not context.user_data.get("tos_accepted"):
         await update.message.reply_text(
@@ -281,9 +284,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
 
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    track_user(context, user)
+    
     if context.user_data.get("waiting_for_search") and update.message and update.message.text:
         query_text = update.message.text.lower()
         context.user_data["waiting_for_search"] = False
+        
+        await console_log(context, user, "searched for bank leads", f"Query: '{update.message.text}'")
         
         matches = []
         for country, banks in BANK_LEADS_DATA.items():
@@ -326,9 +334,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             parse_mode="Markdown", reply_markup=main_menu_kb()
         )
     elif data == "tos_decline":
+        await console_log(context, user, "declined the Terms of Service")
         await query.edit_message_text("❌ You must accept the Terms of Service to use this bot.\n\nSend /start to try again.")
 
     elif data == "main_menu":
+        await console_log(context, user, "returned to main menu")
         balance = get_user_balance(context, user.id)
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n\nPlease choose an option below:",
@@ -336,6 +346,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         )
 
     elif data == "age_leads":
+        await console_log(context, user, "opened Age Leads section")
         await query.edit_message_text(
             "📅 *Age Leads + Country*\n\nStep 1: Please select gender:",
             parse_mode="Markdown",
@@ -349,6 +360,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("age_gender:"):
         gender = data.split(":", 1)[1]
         context.user_data["age_gender"] = gender
+        await console_log(context, user, "selected Age Leads gender", f"Gender: {gender}")
         await query.edit_message_text(
             f"👤 *Gender:* {gender}\n\nStep 2: Please select age range:",
             parse_mode="Markdown",
@@ -368,6 +380,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("age_range:"):
         age_range = data.split(":", 1)[1]
         context.user_data["age_range"] = age_range
+        await console_log(context, user, "selected Age Leads range", f"Range: {age_range}")
         await query.edit_message_text(
             f"👤 *Gender:* {context.user_data.get('age_gender')}\n📅 *Age:* {age_range}\n\nStep 3: Please select country:",
             parse_mode="Markdown",
@@ -381,6 +394,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("age_country:"):
         country = data.split(":", 1)[1]
         context.user_data["age_country"] = country
+        await console_log(context, user, "selected Age Leads country", f"Country: {country}")
         
         package_buttons = []
         for pkg, prc in AGE_LEADS_PRICES.items():
@@ -408,6 +422,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "amount": package,
             "price": price
         }
+        await console_log(context, user, "selected Age Leads package", f"Package: {package} (£{price})")
         await query.edit_message_text(
             f"🛒 *Confirm Age Leads Order*\n\n"
             f"👤 Gender: {context.user_data.get('age_gender')}\n"
@@ -426,6 +441,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # ── BROWSE LEADS FLOW ──
     elif data == "browse_leads":
+        await console_log(context, user, "opened Browse Leads section")
         await query.edit_message_text(
             "🔍 *Browse Leads*\n\nPlease select a bank lead country below to view all available banks:",
             parse_mode="Markdown",
@@ -444,6 +460,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         country = parts[1]
         page = int(parts[2]) if len(parts) > 2 else 0
         context.user_data["bank_country"] = country
+        
+        await console_log(context, user, "browsed bank leads page", f"Country: {country}, Page: {page + 1}")
         
         banks_list = BANK_LEADS_DATA.get(country, [])
         per_page = 10
@@ -487,6 +505,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data["bank_country"] = country
         context.user_data["bank_name"] = bank_name
         
+        await console_log(context, user, "selected a bank lead item", f"Bank: {bank_name} ({country})")
+        
         age_buttons = []
         for age_opt in BANK_FILTER_AGES:
             age_buttons.append([InlineKeyboardButton(age_opt, callback_data=f"bank_age:{age_opt}")])
@@ -504,6 +524,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data["bank_dob"] = age_opt
         bank_name = context.user_data.get("bank_name", "Bank")
         country = context.user_data.get("bank_country", "USA")
+        
+        await console_log(context, user, "selected bank lead age filter", f"Filter: {age_opt}")
         
         package_buttons = []
         for pkg, prc in BANK_LEADS_PRICES.items():
@@ -534,6 +556,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "price": price
         }
         
+        await console_log(context, user, "selected bank lead package", f"Bank: {bank_name}, Package: {package} (£{price})")
+        
         await query.edit_message_text(
             f"🛒 *Confirm Bank Leads Order*\n\n"
             f"🏦 Bank: {bank_name}\n"
@@ -554,6 +578,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     elif data == "bank_search":
         context.user_data["waiting_for_search"] = True
+        await console_log(context, user, "initiated bank search mode")
         await query.edit_message_text(
             "🔍 *Search Bank Leads*\n\nPlease type your search keyword (e.g., bank name) directly in the chat:",
             parse_mode="Markdown",
@@ -564,6 +589,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # ── CRYPTO LEDGER FLOW ──
     elif data == "crypto_ledger_countries":
+        await console_log(context, user, "opened Crypto Ledger section")
         buttons = []
         for country in LEDGER_COUNTRIES:
             buttons.append([InlineKeyboardButton(country, callback_data=f"ledger_country:{country}")])
@@ -578,6 +604,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("ledger_country:"):
         country = data.split(":", 1)[1]
         context.user_data["ledger_country"] = country
+        await console_log(context, user, "selected Crypto Ledger country", f"Country: {country}")
         await query.edit_message_text(
             f"🌍 *Selected Country:* {country}\n\nNow select hardware wallet brand/product:",
             parse_mode="Markdown",
@@ -586,6 +613,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     elif data.startswith("crypto_ledger_wallets:"):
         page = int(data.split(":")[1])
+        await console_log(context, user, "browsed Crypto Ledger wallets page", f"Page: {page + 1}")
         await query.edit_message_text(
             f"🌍 *Selected Country:* {context.user_data.get('ledger_country', 'N/A')}\n\nNow select hardware wallet brand/product:",
             parse_mode="Markdown",
@@ -595,6 +623,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("ledger_wallet:"):
         wallet_brand = data.split(":", 1)[1]
         context.user_data["ledger_wallet"] = wallet_brand
+        await console_log(context, user, "selected Crypto Ledger hardware wallet", f"Wallet: {wallet_brand}")
         
         price_buttons = []
         for pkg, prc in LEDGER_PRICES.items():
@@ -617,6 +646,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "amount": package,
             "price": price
         }
+        await console_log(context, user, "selected Crypto Ledger package", f"Package: {package} (£{price:,})")
         await query.edit_message_text(
             f"🛒 *Confirm Crypto Ledger Order*\n\n"
             f"🌍 Country: {context.user_data.get('ledger_country')}\n"
@@ -633,6 +663,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         )
 
     elif data == "wallet":
+        await console_log(context, user, "opened Wallet section")
         balance = get_user_balance(context, user.id)
         await query.edit_message_text(
             f"ID: `{user.id}`\n\nYou currently have **£{balance}** in your wallet.\n\nClick Top Up to add funds.",
@@ -644,6 +675,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         )
 
     elif data == "topup_select_token":
+        await console_log(context, user, "opened Top Up token selection")
         await query.edit_message_text(
             "Please select which token you would like to top up with:",
             reply_markup=make_single_column_grid(TOPUP_TOKENS, "topup_token", back="wallet")
@@ -652,6 +684,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("topup_token:"):
         token = data.split(":", 1)[1]
         context.user_data["topup_token"] = token
+        await console_log(context, user, "selected top up token", f"Token: {token}")
         await query.edit_message_text(
             f"Select topup amount for {token}:",
             reply_markup=make_single_column_grid([f"£{a}" for a in TOPUP_AMOUNTS], "topup_amount", back="topup_select_token")
@@ -661,6 +694,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         amount_val = int(data.split(":", 1)[1].replace("£", ""))
         token = context.user_data.get("topup_token", "N/A")
         address = WALLET_ADDRESSES.get(token, "N/A")
+        await console_log(context, user, "selected top up amount", f"Amount: £{amount_val} ({token})")
         await query.edit_message_text(
             f"A charge of **£{amount_val}** has been registered.\n\nPlease send payment to:\n\n`{address}`\n\nClick button below once paid to alert admin.",
             parse_mode="Markdown",
@@ -673,6 +707,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("topup_paid:"):
         amount_val = int(data.split(":", 1)[1])
         topup = context.user_data.get("topup_token", "N/A")
+        await console_log(context, user, "submitted top up payment confirmation", f"Amount: £{amount_val} ({topup})")
         await query.edit_message_text(
             f"✅ *Request Submitted!*\n\nAmount: £{amount_val}\nToken: {topup}\n\nAdmin will verify and credit your account shortly.",
             parse_mode="Markdown",
@@ -689,6 +724,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     elif data == "email_leads" or data.startswith("email_page:"):
         page = int(data.split(":")[1]) if data.startswith("email_page:") else 0
+        if data == "email_leads":
+            await console_log(context, user, "opened Email Leads section")
+        else:
+            await console_log(context, user, "browsed Email Leads page", f"Page: {page + 1}")
         per_page = 5
         total_pages = (len(EMAIL_COUNTRIES) + per_page - 1) // per_page
         if total_pages < 1:
@@ -726,6 +765,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("email_country:"):
         country = data.split(":", 1)[1]
         context.user_data["email_country"] = country
+        await console_log(context, user, "selected Email Leads country", f"Country: {country}")
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n\nSelect Provider:", parse_mode="Markdown",
             reply_markup=make_single_column_grid(EMAIL_PROVIDERS, "email_provider", back="email_leads")
@@ -734,6 +774,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("email_provider:"):
         provider = data.split(":", 1)[1]
         country = context.user_data.get("email_country", EMAIL_COUNTRIES[0])
+        await console_log(context, user, "selected Email Leads provider", f"Provider: {provider}")
         if provider == "Crypto":
             await query.edit_message_text(
                 "🪙 *Select Crypto Email Category*:",
@@ -750,6 +791,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("email_subprovider:"):
         sub_provider = data.split(":", 1)[1]
         context.user_data["email_provider"] = f"Crypto - {sub_provider}"
+        await console_log(context, user, "selected Crypto Email subprovider", f"Subprovider: {sub_provider}")
         await query.edit_message_text(
             "📦 Select Quantity:", parse_mode="Markdown",
             reply_markup=make_single_column_grid([f"{k} - £{v}" for k, v in EMAIL_PRICES.items()], "email_amount", back="email_provider:Crypto")
@@ -766,6 +808,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "amount": amount,
             "price": price
         }
+        await console_log(context, user, "selected Email Leads quantity/package", f"Amount: {amount} (£{price})")
         await query.edit_message_text(
             f"Confirm order for {amount} Email leads (£{price})?",
             reply_markup=InlineKeyboardMarkup([
@@ -775,6 +818,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         )
 
     elif data == "sms_leads":
+        await console_log(context, user, "opened SMS Leads section")
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n\n" + SMS_PRICE_LIST.format(admin=admin) + "\n\n🌍 Select Country:",
             parse_mode="Markdown",
@@ -784,6 +828,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("sms_country:"):
         country = data.split(":", 1)[1]
         context.user_data["sms_country"] = country
+        await console_log(context, user, "selected SMS Leads country", f"Country: {country}")
         carriers = SMS_CARRIERS.get(country, ["Default"])
         await query.edit_message_text(
             f"🌍 *Country:* {country}\n\nSelect Carrier:", parse_mode="Markdown",
@@ -793,6 +838,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("sms_carrier:"):
         carrier = data.split(":", 1)[1]
         context.user_data["sms_carrier"] = carrier
+        await console_log(context, user, "selected SMS Leads carrier", f"Carrier: {carrier}")
         await query.edit_message_text(
             "📦 Select Quantity:", parse_mode="Markdown",
             reply_markup=make_single_column_grid([f"{k} - £{v}" for k, v in SMS_PRICES.items() if k in SMS_AMOUNTS], "sms_amount", back="sms_leads")
@@ -809,6 +855,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "amount": amount,
             "price": price
         }
+        await console_log(context, user, "selected SMS Leads quantity/package", f"Amount: {amount} (£{price})")
         await query.edit_message_text(
             f"Confirm order for {amount} SMS leads (£{price})?",
             reply_markup=InlineKeyboardMarkup([
@@ -819,6 +866,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     elif data == "crypto_leads" or data.startswith("crypto_page:"):
         page = int(data.split(":")[1]) if data.startswith("crypto_page:") else 0
+        if data == "crypto_leads":
+            await console_log(context, user, "opened Crypto Leads section")
+        else:
+            await console_log(context, user, "browsed Crypto Leads page", f"Page: {page + 1}")
         per_page = 10
         total_pages = (len(CRYPTO_EXCHANGES) + per_page - 1) // per_page
         if total_pages < 1:
@@ -856,6 +907,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif data.startswith("crypto_exchange:"):
         exchange = data.split(":", 1)[1]
         context.user_data["crypto_exchange"] = exchange
+        await console_log(context, user, "selected Crypto Leads exchange", f"Exchange: {exchange}")
         await query.edit_message_text(
             "📦 Select Quantity:", parse_mode="Markdown",
             reply_markup=make_single_column_grid([f"{k} - £{v}" for k, v in CRYPTO_PRICES.items()], "crypto_amount", back="crypto_leads")
@@ -872,6 +924,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "amount": amount,
             "price": price
         }
+        await console_log(context, user, "selected Crypto Leads quantity/package", f"Amount: {amount} (£{price})")
         await query.edit_message_text(
             f"Confirm order for {amount} Crypto leads (£{price})?",
             reply_markup=InlineKeyboardMarkup([
@@ -886,6 +939,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         current_bal = get_user_balance(context, user.id)
 
         if current_bal < price:
+            await console_log(context, user, "failed order confirmation due to insufficient funds", f"Required: £{price}, Have: £{current_bal}")
             await query.edit_message_text(
                 f"❌ Insufficient funds! You have £{current_bal}, but order costs £{price}.",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👛 Wallet", callback_data="wallet")]])
@@ -893,6 +947,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             return
 
         set_user_balance(context, user.id, current_bal - price)
+        await console_log(context, user, "completed a purchase successfully", f"Item: {order.get('type')} ({order.get('amount')}) — £{price}")
         await query.edit_message_text(
             f"✅ *Order Successful!*\n\nRemaining Balance: £{get_user_balance(context, user.id)}",
             parse_mode="Markdown",
@@ -906,6 +961,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             asyncio.create_task(_async_console_log(context.bot, ADMIN_CHAT_ID, f"🛒 *NEW PURCHASE*\nUser: @{user.username} (`{user.id}`)\nItem: {order.get('type')} ({order.get('amount')}) — £{price}"))
 
     elif data == "faq":
+        await console_log(context, user, "opened FAQ section")
         await query.edit_message_text(
             FAQ_TEXT.format(admin=admin),
             parse_mode="Markdown",
@@ -1032,3 +1088,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
