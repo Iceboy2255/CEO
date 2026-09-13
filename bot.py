@@ -28,9 +28,9 @@ TOPUP_TOKENS  = list(WALLET_ADDRESSES.keys())
 TOPUP_AMOUNTS = [50, 80, 120, 150, 180, 220, 245, 260, 300, 350, 500, 800, 1000, 1500]
 
 # ─── PRODUCT CATALOG & PRICING CONFIGURATIONS ───
-EMAIL_COUNTRIES = ["AUSTRALIA","BRAZIL","CANADA","FRANCE","GERMANY","HUNGARY","ITALY","SPAIN","UK","USA"]
-EMAIL_PROVIDERS = ["Business","Crypto","Gaming","Music","Shopping","Social Media"]
-EMAIL_PRICES    = {"1k":90,"5k":300,"10k":450,"25k":800,"30k":900,"75k":1500}
+EMAIL_COUNTRIES = ["AUSTRALIA", "BRAZIL", "CANADA", "FRANCE", "GERMANY", "HUNGARY", "ITALY", "SPAIN", "UK", "USA"]
+EMAIL_PROVIDERS = ["Business", "Crypto", "Gaming", "Music", "Shopping", "Social Media"]
+EMAIL_PRICES    = {"1k": 90, "5k": 300, "10k": 450, "25k": 800, "30k": 900, "75k": 1500}
 EMAIL_PRICE_LIST = (
     "📋 *Email Leads Price List*\n"
     "1k — £90 | 5k — £300 | 10k — £450\n"
@@ -41,13 +41,13 @@ EMAIL_PRICE_LIST = (
 )
 
 SMS_CARRIERS = {
-    "AUSTRALIA":["Telstra","Optus","Vodafone AU","TPG","Boost Mobile AU","Aldi Mobile","Amaysim"],
-    "UK":["EE","O2","THREE","VODAFONE","SKY","VIRGIN","LYCA"],
-    "USA":["AT&T","Verizon","T-Mobile US","Sprint","Cricket","Metro PCS"],
+    "AUSTRALIA": ["Telstra", "Optus", "Vodafone AU", "TPG", "Boost Mobile AU", "Aldi Mobile", "Amaysim"],
+    "UK": ["EE", "O2", "THREE", "VODAFONE", "SKY", "VIRGIN", "LYCA"],
+    "USA": ["AT&T", "Verizon", "T-Mobile US", "Sprint", "Cricket", "Metro PCS"],
 }
 SMS_COUNTRIES = sorted(SMS_CARRIERS.keys())
-SMS_AMOUNTS   = ["1k","5k","10k","25k","50k","100k","200k","500k"]
-SMS_PRICES    = {"1k":30,"2k":54,"3k":72,"4k":90,"5k":100,"10k":160,"25k":360,"50k":560,"100k":700,"500k":1600}
+SMS_AMOUNTS   = ["1k", "5k", "10k", "25k", "50k", "100k", "200k", "500k"]
+SMS_PRICES    = {"1k": 30, "2k": 54, "3k": 72, "4k": 90, "5k": 100, "10k": 160, "25k": 360, "50k": 560, "100k": 700, "500k": 1600}
 SMS_PRICE_LIST = (
     "📋 *SMS Leads Price List*\n"
     "1k — £30 | 5k — £100 | 10k — £160\n"
@@ -56,45 +56,20 @@ SMS_PRICE_LIST = (
     "1M+ — Message {admin}"
 )
 
-CRYPTO_EXCHANGES = ["Binance","Bybit","Coinbase","OKX","Upbit","Bitget","Kraken","Kucoin"]
-CRYPTO_PRICES    = {"1k":200,"2k":380,"5k":800,"10k":1500,"25k":3000}
+CRYPTO_EXCHANGES = ["Binance", "Bybit", "Coinbase", "OKX", "Upbit", "Bitget", "Kraken", "Kucoin"]
+CRYPTO_PRICES    = {"1k": 200, "2k": 380, "5k": 800, "10k": 1500, "25k": 3000}
 
 AGE_LEADS_PRICES = {
-    "1K": 40,
-    "2K": 64,
-    "3K": 82,
-    "4K": 100,
-    "5K": 110,
-    "10K": 170,
-    "15K": 250,
-    "20K": 310,
-    "25K": 370,
-    "30K": 450,
-    "35K": 500,
-    "40K": 530,
-    "45K": 550,
-    "50K": 570,
-    "100K": 710,
-    "200K": 1010,
-    "500K": 1610,
+    "1K": 40, "2K": 64, "3K": 82, "4K": 100, "5K": 110,
+    "10K": 170, "15K": 250, "20K": 310, "25K": 370, "30K": 450,
+    "35K": 500, "40K": 530, "45K": 550, "50K": 570, "100K": 710,
+    "200K": 1010, "500K": 1610,
 }
 
 BANK_LEADS_PRICES = {
-    "1K": 150,
-    "2K": 230,
-    "3K": 320,
-    "4K": 410,
-    "5K": 475,
-    "6K": 530,
-    "7K": 610,
-    "8K": 650,
-    "10K": 750,
-    "15K": 950,
-    "20K": 1150,
-    "25K": 1550,
-    "30K": 1750,
-    "50K": 2050,
-    "100K": 3050,
+    "1K": 150, "2K": 230, "3K": 320, "4K": 410, "5K": 475,
+    "6K": 530, "7K": 610, "8K": 650, "10K": 750, "15K": 950,
+    "20K": 1150, "25K": 1550, "30K": 1750, "50K": 2050, "100K": 3050,
 }
 
 BANK_LEADS_DATA = {
@@ -161,7 +136,7 @@ FAQ_TEXT = (
 )
 
 # ─── HELPER FUNCTIONS ───
-async def console_log(context, user, action, detail=""):
+async def console_log(context: ContextTypes.DEFAULT_TYPE, user, action: str, detail: str = "") -> None:
     try:
         if not CONSOLE_CHAT:
             return
@@ -171,32 +146,40 @@ async def console_log(context, user, action, detail=""):
             msg += f" — {detail}"
         await context.bot.send_message(chat_id=CONSOLE_CHAT, text=msg)
     except Exception as e:
-        logger.error(f"Console log error: {e}")
+        logger.error("Console log error: %s", e)
 
-def is_admin(update):
+def is_admin(update: Update) -> bool:
     user_id = update.effective_user.id
     chat_id = str(update.effective_chat.id)
     return user_id in ADMIN_IDS or str(user_id) == str(ADMIN_CHAT_ID) or chat_id == str(CONSOLE_CHAT)
 
-def track_user(context, user):
+def track_user(context: ContextTypes.DEFAULT_TYPE, user) -> None:
     if "all_users" not in context.bot_data:
         context.bot_data["all_users"] = set()
     context.bot_data["all_users"].add(user.id)
 
-def get_user_balance(context, user_id):
+def get_user_balance(context: ContextTypes.DEFAULT_TYPE, user_id: int) -> int:
     if "balances" not in context.bot_data:
         context.bot_data["balances"] = {}
     return context.bot_data["balances"].get(user_id, 0)
 
-def set_user_balance(context, user_id, amount):
+def set_user_balance(context: ContextTypes.DEFAULT_TYPE, user_id: int, amount: int) -> None:
     if "balances" not in context.bot_data:
         context.bot_data["balances"] = {}
     context.bot_data["balances"][user_id] = amount
 
-def make_grid(items, prefix, cols=2, back="main_menu"):
+def make_single_column_grid(items: list, prefix: str, back: str = "main_menu") -> InlineKeyboardMarkup:
+    """Creates a full-width vertical stack layout (one button per row) as requested."""
+    buttons = []
+    for item in items:
+        buttons.append([InlineKeyboardButton(str(item), callback_data=f"{prefix}:{item}")])
+    buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=back)])
+    return InlineKeyboardMarkup(buttons)
+
+def make_grid(items: list, prefix: str, cols: int = 2, back: str = "main_menu") -> InlineKeyboardMarkup:
     buttons, row = [], []
     for item in items:
-        row.append(InlineKeyboardButton(item, callback_data=f"{prefix}:{item}"))
+        row.append(InlineKeyboardButton(str(item), callback_data=f"{prefix}:{item}"))
         if len(row) == cols:
             buttons.append(row)
             row = []
@@ -205,19 +188,20 @@ def make_grid(items, prefix, cols=2, back="main_menu"):
     buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=back)])
     return InlineKeyboardMarkup(buttons)
 
-def main_menu_kb():
+def main_menu_kb() -> InlineKeyboardMarkup:
+    """Full-width buttons, one under the other, matching the user's explicit design flow style."""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Age Leads + Country", callback_data="age_leads"),
-         InlineKeyboardButton("Browse Leads",       callback_data="browse_leads")],
-        [InlineKeyboardButton("📧 Email Leads",     callback_data="email_leads"),
-         InlineKeyboardButton("📱 SMS Leads",       callback_data="sms_leads")],
-        [InlineKeyboardButton("💰 Crypto Leads",    callback_data="crypto_leads"),
-         InlineKeyboardButton("👛 Wallet",          callback_data="wallet"),
-         InlineKeyboardButton("❓ FAQ",             callback_data="faq")],
+        [InlineKeyboardButton("Age Leads + Country", callback_data="age_leads")],
+        [InlineKeyboardButton("Browse Leads",       callback_data="browse_leads")],
+        [InlineKeyboardButton("📧 Email Leads",     callback_data="email_leads")],
+        [InlineKeyboardButton("📱 SMS Leads",       callback_data="sms_leads")],
+        [InlineKeyboardButton("💰 Crypto Leads",    callback_data="crypto_leads")],
+        [InlineKeyboardButton("👛 Wallet",          callback_data="wallet")],
+        [InlineKeyboardButton("❓ FAQ",             callback_data="faq")],
     ])
 
 # ─── HANDLERS ───
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     track_user(context, user)
     balance = get_user_balance(context, user.id)
@@ -238,8 +222,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown", reply_markup=main_menu_kb()
         )
 
-async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.user_data.get("waiting_for_search"):
+async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if context.user_data.get("waiting_for_search") and update.message and update.message.text:
         query_text = update.message.text.lower()
         context.user_data["waiting_for_search"] = False
         
@@ -267,14 +251,14 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ])
         )
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query   = update.callback_query
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
     await query.answer()
-    data    = query.data
-    user    = query.from_user
+    data = query.data
+    user = query.from_user
     track_user(context, user)
     balance = get_user_balance(context, user.id)
-    admin   = ADMIN_USERNAME
+    admin = ADMIN_USERNAME
 
     if data == "tos_accept":
         context.user_data["tos_accepted"] = True
@@ -298,8 +282,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "📅 *Age Leads + Country*\n\nStep 1: Please select gender:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🧔‍♀️ Female Leads", callback_data="age_gender:Female Leads"),
-                 InlineKeyboardButton("👴 Male Leads", callback_data="age_gender:Male Leads")],
+                [InlineKeyboardButton("🧔‍♀️ Female Leads", callback_data="age_gender:Female Leads")],
+                [InlineKeyboardButton("👴 Male Leads", callback_data="age_gender:Male Leads")],
                 [InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]
             ])
         )
@@ -311,10 +295,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"👤 *Gender:* {gender}\n\nStep 2: Please select age range:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("18-24", callback_data="age_range:18-24"), InlineKeyboardButton("25-34", callback_data="age_range:25-34")],
-                [InlineKeyboardButton("35-44", callback_data="age_range:35-44"), InlineKeyboardButton("45-54", callback_data="age_range:45-54")],
-                [InlineKeyboardButton("55-64", callback_data="age_range:55-64"), InlineKeyboardButton("65-74", callback_data="age_range:65-74")],
-                [InlineKeyboardButton("75-84", callback_data="age_range:75-84"), InlineKeyboardButton("85-94", callback_data="age_range:85-94")],
+                [InlineKeyboardButton("18-24", callback_data="age_range:18-24")],
+                [InlineKeyboardButton("25-34", callback_data="age_range:25-34")],
+                [InlineKeyboardButton("35-44", callback_data="age_range:35-44")],
+                [InlineKeyboardButton("45-54", callback_data="age_range:45-54")],
+                [InlineKeyboardButton("55-64", callback_data="age_range:55-64")],
+                [InlineKeyboardButton("65-74", callback_data="age_range:65-74")],
+                [InlineKeyboardButton("75-84", callback_data="age_range:75-84")],
+                [InlineKeyboardButton("85-94", callback_data="age_range:85-94")],
                 [InlineKeyboardButton("⬅️ Back", callback_data="age_leads")]
             ])
         )
@@ -326,8 +314,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"👤 *Gender:* {context.user_data.get('age_gender')}\n📅 *Age:* {age_range}\n\nStep 3: Please select country:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🇬🇧 United Kingdom", callback_data="age_country:United Kingdom"),
-                 InlineKeyboardButton("🇺🇸 United States", callback_data="age_country:United States")],
+                [InlineKeyboardButton("🇬🇧 United Kingdom", callback_data="age_country:United Kingdom")],
+                [InlineKeyboardButton("🇺🇸 United States", callback_data="age_country:United States")],
                 [InlineKeyboardButton("⬅️ Back", callback_data="age_gender:" + str(context.user_data.get('age_gender')))]
             ])
         )
@@ -337,14 +325,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["age_country"] = country
         
         package_buttons = []
-        row = []
         for pkg, prc in AGE_LEADS_PRICES.items():
-            row.append(InlineKeyboardButton(f"{pkg} — £{prc}", callback_data=f"age_package:{pkg}"))
-            if len(row) == 2:
-                package_buttons.append(row)
-                row = []
-        if row:
-            package_buttons.append(row)
+            package_buttons.append([InlineKeyboardButton(f"{pkg} — £{prc}", callback_data=f"age_package:{pkg}")])
         package_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="age_range:" + str(context.user_data.get('age_range')))])
 
         await query.edit_message_text(
@@ -384,6 +366,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ])
         )
 
+    # ── UPDATED BROWSE LEADS FLOW IMPLEMENTING STEPS 1-6 ──
     elif data == "browse_leads":
         await query.edit_message_text(
             "🔍 *Browse Leads*\n\nPlease select a bank lead country below to view all available banks:",
@@ -405,7 +388,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["bank_country"] = country
         
         banks_list = BANK_LEADS_DATA.get(country, [])
-        per_page = 20
+        per_page = 10
         total_pages = (len(banks_list) + per_page - 1) // per_page
         if total_pages < 1:
             total_pages = 1
@@ -418,37 +401,105 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         end_idx = start_idx + per_page
         current_chunk = banks_list[start_idx:end_idx]
         
-        banks_formatted = "\n".join([f"• {bank}" for bank in current_chunk])
-        preview_text = (
-            f"🏦 *{country} Bank Leads* (Page {page + 1}/{total_pages})\n"
-            f"Total available banks: {len(banks_list)}\n\n"
-            f"*Banks Included:*\n{banks_formatted}\n\n"
-            f"Select a package below to purchase:"
-        )
-        
-        # Navigation buttons: Back (Front), Page Indicator, Next
-        nav_buttons = []
-        nav_buttons.append(InlineKeyboardButton("⬅️ Front", callback_data=f"bank_lead:{country}:{page-1 if page > 0 else 0}"))
-        nav_buttons.append(InlineKeyboardButton(f"Page {page+1}/{total_pages}", callback_data="noop"))
-        nav_buttons.append(InlineKeyboardButton("Next ➡️", callback_data=f"bank_lead:{country}:{page+1 if page < total_pages - 1 else total_pages - 1}"))
+        bank_buttons = []
+        for bank in current_chunk:
+            # Step 2: User selects any product/bank item
+            bank_buttons.append([InlineKeyboardButton(bank, callback_data=f"bank_select:{country}:{bank}")])
             
-        package_buttons = [
-            [InlineKeyboardButton("1K — £150", callback_data="bank_buy:1K:150"), InlineKeyboardButton("2K — £230", callback_data="bank_buy:2K:230")],
-            [InlineKeyboardButton("3K — £320", callback_data="bank_buy:3K:320"), InlineKeyboardButton("4K — £410", callback_data="bank_buy:4K:410")],
-            [InlineKeyboardButton("5K — £475", callback_data="bank_buy:5K:475"), InlineKeyboardButton("6K — £530", callback_data="bank_buy:6K:530")],
-            [InlineKeyboardButton("7K — £610", callback_data="bank_buy:7K:610"), InlineKeyboardButton("8K — £650", callback_data="bank_buy:8K:650")],
-            [InlineKeyboardButton("10K — £750", callback_data="bank_buy:10K:750"), InlineKeyboardButton("15K — £950", callback_data="bank_buy:15K:950")],
-            [InlineKeyboardButton("20K — £1,150", callback_data="bank_buy:20K:1150"), InlineKeyboardButton("25K — £1,550", callback_data="bank_buy:25K:1550")],
-            [InlineKeyboardButton("30K — £1,750", callback_data="bank_buy:30K:1750"), InlineKeyboardButton("50K — £2,050", callback_data="bank_buy:50K:2050")],
-            [InlineKeyboardButton("100K — £3,050", callback_data="bank_buy:100K:3050")],
-            nav_buttons,
-            [InlineKeyboardButton("⬅️ Back to Browse", callback_data="browse_leads")]
+        prev_page = (page - 1) % total_pages
+        next_page = (page + 1) % total_pages
+
+        nav_buttons = [
+            InlineKeyboardButton("⬅️ Front", callback_data=f"bank_lead:{country}:{prev_page}"),
+            InlineKeyboardButton(f"Page {page+1}/{total_pages}", callback_data="noop"),
+            InlineKeyboardButton("Next ➡️", callback_data=f"bank_lead:{country}:{next_page}")
         ]
+        bank_buttons.append(nav_buttons)
+        bank_buttons.append([InlineKeyboardButton("⬅️ Back to Browse", callback_data="browse_leads")])
         
         await query.edit_message_text(
-            preview_text,
+            f"🏦 *{country} Bank Leads* (Page {page + 1}/{total_pages})\n\nSelect a bank below:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(bank_buttons)
+        )
+
+    elif data.startswith("bank_select:"):
+        parts = data.split(":")
+        country = parts[1]
+        bank_name = parts[2]
+        context.user_data["bank_country"] = country
+        context.user_data["bank_name"] = bank_name
+        
+        # Step 3: After selecting a product -> go to the Price page (incorporating options/prices)
+        package_buttons = []
+        for pkg, prc in BANK_LEADS_PRICES.items():
+            package_buttons.append([InlineKeyboardButton(f"{pkg} — £{prc}", callback_data=f"bank_pkg_select:{pkg}:{prc}")])
+        
+        # Step 4: On the Price page there must be a Next button. Always include the Next button.
+        package_buttons.append([InlineKeyboardButton("➡️ Next", callback_data="bank_price_next")])
+        package_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=f"bank_lead:{country}:0")])
+        
+        await query.edit_message_text(
+            f"🏦 *Product Selected:* {bank_name} ({country})\n\n"
+            f"📋 *Price Page*\nSelect your desired package configuration and press Next:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(package_buttons)
+        )
+
+    elif data.startswith("bank_pkg_select:"):
+        parts = data.split(":")
+        package = parts[1]
+        price = int(parts[2])
+        context.user_data["selected_bank_pkg"] = package
+        context.user_data["selected_bank_price"] = price
+        bank_name = context.user_data.get("bank_name", "Bank")
+        country = context.user_data.get("bank_country", "USA")
+
+        package_buttons = []
+        for pkg, prc in BANK_LEADS_PRICES.items():
+            label = f"✅ {pkg} — £{prc}" if pkg == package else f"{pkg} — £{prc}"
+            package_buttons.append([InlineKeyboardButton(label, callback_data=f"bank_pkg_select:{pkg}:{prc}")])
+        
+        # Step 4 & 5: Next button is present here as well
+        package_buttons.append([InlineKeyboardButton("➡️ Next", callback_data="bank_price_next")])
+        package_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data=f"bank_select:{country}:{bank_name}")])
+
+        await query.edit_message_text(
+            f"🏦 *Product:* {bank_name} ({country})\n"
+            f"📦 Selected Package: *{package}* (£{price})\n\n"
+            f"Press Next to continue:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(package_buttons)
+        )
+
+    elif data == "bank_price_next":
+        # Step 5: When user clicks Next -> go to the Top (Top Up / Checkout / Confirmation) page
+        bank_name = context.user_data.get("bank_name", "Bank")
+        country = context.user_data.get("bank_country", "USA")
+        package = context.user_data.get("selected_bank_pkg", "1K")
+        price = context.user_data.get("selected_bank_price", BANK_LEADS_PRICES.get("1K", 150))
+        
+        context.user_data["pending_order"] = {
+            "type": f"{country} Bank Leads",
+            "bank": bank_name,
+            "dob": "N/A",
+            "amount": package,
+            "price": price
+        }
+
+        # Step 6: Keep a Back button on every page
+        await query.edit_message_text(
+            f"🛒 *Top / Checkout Page*\n\n"
+            f"🏦 Bank: {bank_name} ({country})\n"
+            f"📦 Package: {package}\n"
+            f"💰 Price: £{price}\n\n"
+            f"Your Wallet Balance: £{balance}",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
+                [InlineKeyboardButton("👛 Wallet / Top Up", callback_data="wallet")],
+                [InlineKeyboardButton("⬅️ Back", callback_data=f"bank_select:{country}:{bank_name}")]
+            ])
         )
 
     elif data == "noop":
@@ -461,30 +512,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("⬅️ Back", callback_data="browse_leads")]
-            ])
-        )
-
-    elif data.startswith("bank_buy:"):
-        parts = data.split(":")
-        amount = parts[1]
-        price = int(parts[2])
-        country = context.user_data.get("bank_country", "USA")
-        context.user_data["pending_order"] = {
-            "type": f"{country} Bank Leads",
-            "country": country,
-            "amount": amount,
-            "price": price
-        }
-        await query.edit_message_text(
-            f"🛒 *Confirm {country} Bank Leads Order*\n\n"
-            f"📦 Package: {amount}\n"
-            f"💰 Price: £{price}\n\n"
-            f"Your Balance: £{balance}",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
-                [InlineKeyboardButton("👛 Wallet / Top Up", callback_data="wallet")],
-                [InlineKeyboardButton("⬅️ Back", callback_data=f"bank_lead:{country}:0")]
             ])
         )
 
@@ -502,7 +529,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "topup_select_token":
         await query.edit_message_text(
             "Please select which token you would like to top up with:",
-            reply_markup=make_grid(TOPUP_TOKENS, "topup_token", cols=1, back="wallet")
+            reply_markup=make_single_column_grid(TOPUP_TOKENS, "topup_token", back="wallet")
         )
 
     elif data.startswith("topup_token:"):
@@ -510,13 +537,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["topup_token"] = token
         await query.edit_message_text(
             f"Select topup amount for {token}:",
-            reply_markup=make_grid([f"£{a}" for a in TOPUP_AMOUNTS], "topup_amount", cols=2, back="topup_select_token")
+            reply_markup=make_single_column_grid([f"£{a}" for a in TOPUP_AMOUNTS], "topup_amount", back="topup_select_token")
         )
 
     elif data.startswith("topup_amount:"):
         amount_val = int(data.split(":", 1)[1].replace("£", ""))
-        token      = context.user_data.get("topup_token", "N/A")
-        address    = WALLET_ADDRESSES.get(token, "N/A")
+        token = context.user_data.get("topup_token", "N/A")
+        address = WALLET_ADDRESSES.get(token, "N/A")
         await query.edit_message_text(
             f"A charge of **£{amount_val}** has been registered.\n\nPlease send payment to:\n\n`{address}`\n\nClick button below once paid to alert admin.",
             parse_mode="Markdown",
@@ -528,7 +555,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data.startswith("topup_paid:"):
         amount_val = int(data.split(":", 1)[1])
-        topup      = context.user_data.get("topup_token", "N/A")
+        topup = context.user_data.get("topup_token", "N/A")
         await query.edit_message_text(
             f"✅ *Request Submitted!*\n\nAmount: £{amount_val}\nToken: {topup}\n\nAdmin will verify and credit your account shortly.",
             parse_mode="Markdown",
@@ -536,83 +563,131 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         if ADMIN_CHAT_ID:
             try:
-                await context.bot.send_message(chat_id=ADMIN_CHAT_ID,
-                    text=f"🔔 *TOP-UP NOTIFICATION*\n\nUser: @{user.username or user.first_name}\nID: `{user.id}`\nAmount: £{amount_val}\nToken: {topup}\n\nApprove via:\n`/userbal {user.id} {amount_val} pass`")
+                await context.bot.send_message(
+                    chat_id=ADMIN_CHAT_ID,
+                    text=f"🔔 *TOP-UP NOTIFICATION*\n\nUser: @{user.username or user.first_name}\nID: `{user.id}`\nAmount: £{amount_val}\nToken: {topup}\n\nApprove via:\n`/userbal {user.id} {amount_val} pass`"
+                )
             except Exception as e:
-                logger.error(f"Admin notify error: {e}")
+                logger.error("Admin notify error: %s", e)
 
     elif data == "email_leads":
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n\n" + EMAIL_PRICE_LIST.format(admin=admin) + "\n\n🌍 Select Country:",
             parse_mode="Markdown",
-            reply_markup=make_grid(EMAIL_COUNTRIES, "email_country", cols=2, back="main_menu")
+            reply_markup=make_single_column_grid(EMAIL_COUNTRIES, "email_country", back="main_menu")
         )
 
     elif data.startswith("email_country:"):
         country = data.split(":", 1)[1]
         context.user_data["email_country"] = country
-        await query.edit_message_text(f"🌍 *Country:* {country}\n\nSelect Provider:", parse_mode="Markdown",
-            reply_markup=make_grid(EMAIL_PROVIDERS, "email_provider", cols=1, back="email_leads"))
+        await query.edit_message_text(
+            f"🌍 *Country:* {country}\n\nSelect Provider:", parse_mode="Markdown",
+            reply_markup=make_single_column_grid(EMAIL_PROVIDERS, "email_provider", back="email_leads")
+        )
 
     elif data.startswith("email_provider:"):
         provider = data.split(":", 1)[1]
         context.user_data["email_provider"] = provider
-        await query.edit_message_text("📦 Select Quantity:", parse_mode="Markdown",
-            reply_markup=make_grid([f"{k} - £{v}" for k, v in EMAIL_PRICES.items()], "email_amount", cols=1, back="email_leads"))
+        await query.edit_message_text(
+            "📦 Select Quantity:", parse_mode="Markdown",
+            reply_markup=make_single_column_grid([f"{k} - £{v}" for k, v in EMAIL_PRICES.items()], "email_amount", back="email_leads")
+        )
 
     elif data.startswith("email_amount:"):
         selected = data.split(":", 1)[1]
-        amount   = selected.split(" - ")[0]
-        price    = EMAIL_PRICES.get(amount, 0)
-        context.user_data["pending_order"] = {"type": "Email Leads", "country": context.user_data.get("email_country"), "provider": context.user_data.get("email_provider"), "amount": amount, "price": price}
-        await query.edit_message_text(f"Confirm order for {amount} Email leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="wallet")]]))
+        amount = selected.split(" - ")[0]
+        price = EMAIL_PRICES.get(amount, 0)
+        context.user_data["pending_order"] = {
+            "type": "Email Leads",
+            "country": context.user_data.get("email_country"),
+            "provider": context.user_data.get("email_provider"),
+            "amount": amount,
+            "price": price
+        }
+        await query.edit_message_text(
+            f"Confirm order for {amount} Email leads (£{price})?",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="wallet")]
+            ])
+        )
 
     elif data == "sms_leads":
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n\n" + SMS_PRICE_LIST.format(admin=admin) + "\n\n🌍 Select Country:",
             parse_mode="Markdown",
-            reply_markup=make_grid(SMS_COUNTRIES, "sms_country", cols=2, back="main_menu")
+            reply_markup=make_single_column_grid(SMS_COUNTRIES, "sms_country", back="main_menu")
         )
 
     elif data.startswith("sms_country:"):
         country = data.split(":", 1)[1]
         context.user_data["sms_country"] = country
         carriers = SMS_CARRIERS.get(country, ["Default"])
-        await query.edit_message_text(f"🌍 *Country:* {country}\n\nSelect Carrier:", parse_mode="Markdown",
-            reply_markup=make_grid(carriers, "sms_carrier", cols=2, back="sms_leads"))
+        await query.edit_message_text(
+            f"🌍 *Country:* {country}\n\nSelect Carrier:", parse_mode="Markdown",
+            reply_markup=make_single_column_grid(carriers, "sms_carrier", back="sms_leads")
+        )
 
     elif data.startswith("sms_carrier:"):
         carrier = data.split(":", 1)[1]
         context.user_data["sms_carrier"] = carrier
-        await query.edit_message_text("📦 Select Quantity:", parse_mode="Markdown",
-            reply_markup=make_grid([f"{k} - £{v}" for k, v in SMS_PRICES.items() if k in SMS_AMOUNTS], "sms_amount", cols=1, back="sms_leads"))
+        await query.edit_message_text(
+            "📦 Select Quantity:", parse_mode="Markdown",
+            reply_markup=make_single_column_grid([f"{k} - £{v}" for k, v in SMS_PRICES.items() if k in SMS_AMOUNTS], "sms_amount", back="sms_leads")
+        )
 
     elif data.startswith("sms_amount:"):
         selected = data.split(":", 1)[1]
-        amount   = selected.split(" - ")[0]
-        price    = SMS_PRICES.get(amount, 0)
-        context.user_data["pending_order"] = {"type": "SMS Leads", "country": context.user_data.get("sms_country"), "provider": context.user_data.get("sms_carrier"), "amount": amount, "price": price}
-        await query.edit_message_text(f"Confirm order for {amount} SMS leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="wallet")]]))
+        amount = selected.split(" - ")[0]
+        price = SMS_PRICES.get(amount, 0)
+        context.user_data["pending_order"] = {
+            "type": "SMS Leads",
+            "country": context.user_data.get("sms_country"),
+            "provider": context.user_data.get("sms_carrier"),
+            "amount": amount,
+            "price": price
+        }
+        await query.edit_message_text(
+            f"Confirm order for {amount} SMS leads (£{price})?",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="wallet")]
+            ])
+        )
 
     elif data == "crypto_leads":
         await query.edit_message_text(
             f"💰 *Current Balance: £{balance}*\n\nSelect Crypto Exchange:",
             parse_mode="Markdown",
-            reply_markup=make_grid(CRYPTO_EXCHANGES, "crypto_exchange", cols=2, back="main_menu")
+            reply_markup=make_single_column_grid(CRYPTO_EXCHANGES, "crypto_exchange", back="main_menu")
         )
 
     elif data.startswith("crypto_exchange:"):
         exchange = data.split(":", 1)[1]
         context.user_data["crypto_exchange"] = exchange
-        await query.edit_message_text("📦 Select Quantity:", parse_mode="Markdown",
-            reply_markup=make_grid([f"{k} - £{v}" for k, v in CRYPTO_PRICES.items()], "crypto_amount", cols=1, back="crypto_leads"))
+        await query.edit_message_text(
+            "📦 Select Quantity:", parse_mode="Markdown",
+            reply_markup=make_single_column_grid([f"{k} - £{v}" for k, v in CRYPTO_PRICES.items()], "crypto_amount", back="crypto_leads")
+        )
 
     elif data.startswith("crypto_amount:"):
         selected = data.split(":", 1)[1]
-        amount   = selected.split(" - ")[0]
-        price    = CRYPTO_PRICES.get(amount, 0)
-        context.user_data["pending_order"] = {"type": "Crypto Leads", "country": "CRYPTO", "provider": context.user_data.get("crypto_exchange"), "amount": amount, "price": price}
-        await query.edit_message_text(f"Confirm order for {amount} Crypto leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="wallet")]]))
+        amount = selected.split(" - ")[0]
+        price = CRYPTO_PRICES.get(amount, 0)
+        context.user_data["pending_order"] = {
+            "type": "Crypto Leads",
+            "country": "CRYPTO",
+            "provider": context.user_data.get("crypto_exchange"),
+            "amount": amount,
+            "price": price
+        }
+        await query.edit_message_text(
+            f"Confirm order for {amount} Crypto leads (£{price})?",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="wallet")]
+            ])
+        )
 
     elif data == "order_confirm":
         order = context.user_data.get("pending_order", {})
@@ -620,24 +695,45 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         current_bal = get_user_balance(context, user.id)
 
         if current_bal < price:
-            await query.edit_message_text(f"❌ Insufficient funds! You have £{current_bal}, but order costs £{price}.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👛 Wallet", callback_data="wallet")]]))
+            await query.edit_message_text(
+                f"❌ Insufficient funds! You have £{current_bal}, but order costs £{price}.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👛 Wallet", callback_data="wallet")]])
+            )
             return
 
         set_user_balance(context, user.id, current_bal - price)
-        await query.edit_message_text(f"✅ *Order Successful!*\n\nRemaining Balance: £{get_user_balance(context, user.id)}", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👛 Wallet", callback_data="wallet")], [InlineKeyboardButton("Menu", callback_data="main_menu")]]))
+        await query.edit_message_text(
+            f"✅ *Order Successful!*\n\nRemaining Balance: £{get_user_balance(context, user.id)}",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("👛 Wallet", callback_data="wallet")],
+                [InlineKeyboardButton("Menu", callback_data="main_menu")]
+            ])
+        )
         
         if ADMIN_CHAT_ID:
-            await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"🛒 *NEW PURCHASE*\nUser: @{user.username} (`{user.id}`)\nItem: {order.get('type')} ({order.get('amount')}) — £{price}")
+            await context.bot.send_message(
+                chat_id=ADMIN_CHAT_ID,
+                text=f"🛒 *NEW PURCHASE*\nUser: @{user.username} (`{user.id}`)\nItem: {order.get('type')} ({order.get('amount')}) — £{price}"
+            )
 
     elif data == "faq":
-        await query.edit_message_text(FAQ_TEXT.format(admin=admin), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]]))
+        await query.edit_message_text(
+            FAQ_TEXT.format(admin=admin),
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
+        )
 
 # ─── ADMIN COMMANDS ───
-async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update): return
+async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not is_admin(update):
+        return
     try:
+        if not context.args or len(context.args) < 2:
+            await update.message.reply_text("Usage: /userbal <user_id> <amount> pass")
+            return
         target_id = int(context.args[0])
-        amount    = int(context.args[1])
+        amount = int(context.args[1])
         if len(context.args) < 3 or context.args[2] != "pass":
             await update.message.reply_text("Usage: /userbal <user_id> <amount> pass")
             return
@@ -647,13 +743,20 @@ async def userbal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         set_user_balance(context, target_id, new_bal)
         
         await update.message.reply_text(f"✅ Updated user {target_id} balance. New total: £{new_bal}")
-        await context.bot.send_message(chat_id=target_id, text=f"🎉 Your wallet has been credited with £{amount}!\n💰 Current Balance: £{new_bal}")
+        await context.bot.send_message(
+            chat_id=target_id,
+            text=f"🎉 Your wallet has been credited with £{amount}!\n💰 Current Balance: £{new_bal}"
+        )
     except Exception as e:
         await update.message.reply_text(f"Error: {e}\nUsage: /userbal <user_id> <amount> pass")
 
-async def sendto(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update): return
+async def sendto(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not is_admin(update):
+        return
     try:
+        if not context.args or len(context.args) < 2:
+            await update.message.reply_text("Usage: /sendto <user_id> <message>")
+            return
         target_id = int(context.args[0])
         msg = " ".join(context.args[1:])
         await context.bot.send_message(chat_id=target_id, text=msg)
@@ -661,8 +764,12 @@ async def sendto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Failed: {e}")
 
-async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update): return
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not is_admin(update):
+        return
+    if not context.args:
+        await update.message.reply_text("Usage: /broadcast <message>")
+        return
     message_text = " ".join(context.args)
     if not message_text:
         await update.message.reply_text("Usage: /broadcast <message>")
@@ -677,13 +784,14 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text=message_text, parse_mode="Markdown")
             success_count += 1
         except Exception as e:
-            logger.error(f"Broadcast error for user {user_id}: {e}")
+            logger.error("Broadcast error for user %s: %s", user_id, e)
             fail_count += 1
 
     await update.message.reply_text(f"📢 Broadcast complete.\nSuccessfully sent: {success_count}\nFailed: {fail_count}")
 
-async def adminhelp(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update): return
+async def adminhelp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not is_admin(update):
+        return
     await update.message.reply_text(
         "🛠 *Admin Commands*\n\n"
         "/userbal <id> <amount> pass — Credit user balance & notify\n"
@@ -692,7 +800,7 @@ async def adminhelp(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/adminhelp — Show this help"
     )
 
-def main():
+def main() -> None:
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("userbal", userbal))
