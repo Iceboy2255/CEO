@@ -16,7 +16,6 @@ ETH_ADDRESS    = os.environ.get("ETH_ADDRESS", "YOUR_ETH_ADDRESS")
 SOL_ADDRESS    = os.environ.get("SOL_ADDRESS", "YOUR_SOL_ADDRESS")
 LTC_ADDRESS    = os.environ.get("LTC_ADDRESS", "YOUR_LTC_ADDRESS")
 
-# Add your Telegram User ID(s) here to grant admin access
 ADMIN_IDS      = [123456789]
 
 WALLET_ADDRESSES = {
@@ -60,7 +59,6 @@ SMS_PRICE_LIST = (
 CRYPTO_EXCHANGES = ["Binance","Bybit","Coinbase","OKX","Upbit","Bitget","Kraken","Kucoin"]
 CRYPTO_PRICES    = {"1k":200,"2k":380,"5k":800,"10k":1500,"25k":3000}
 
-# Age Leads Custom Prices (Original + £10)
 AGE_LEADS_PRICES = {
     "1K": 40,
     "2K": 64,
@@ -81,7 +79,24 @@ AGE_LEADS_PRICES = {
     "500K": 1610,
 }
 
-# ─── BANK LEADS CATALOG ───
+BANK_LEADS_PRICES = {
+    "1K": 150,
+    "2K": 230,
+    "3K": 320,
+    "4K": 410,
+    "5K": 475,
+    "6K": 530,
+    "7K": 610,
+    "8K": 650,
+    "10K": 750,
+    "15K": 950,
+    "20K": 1150,
+    "25K": 1550,
+    "30K": 1750,
+    "50K": 2050,
+    "100K": 3050,
+}
+
 BANK_LEADS_DATA = {
     "USA": [
         "JPMorgan Chase", "Bank of America", "Wells Fargo", "Citibank", "U.S. Bank", "PNC Bank", "Truist Bank", "Capital One", "TD Bank", "BMO Bank",
@@ -244,10 +259,10 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Select a category below to proceed with purchase:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🇺🇸 USA BANK LEADS", callback_data="bank_lead:USA")],
-                [InlineKeyboardButton("🇬🇧 UK BANK LEADS", callback_data="bank_lead:UK")],
-                [InlineKeyboardButton("🇮🇪 Ireland Bank Leads", callback_data="bank_lead:Ireland")],
-                [InlineKeyboardButton("🇦🇺 Aus Bank Leads", callback_data="bank_lead:Aus")],
+                [InlineKeyboardButton("🇺🇸 USA BANK LEADS", callback_data="bank_lead:USA:0")],
+                [InlineKeyboardButton("🇬🇧 UK BANK LEADS", callback_data="bank_lead:UK:0")],
+                [InlineKeyboardButton("🇮🇪 Ireland Bank Leads", callback_data="bank_lead:Ireland:0")],
+                [InlineKeyboardButton("🇦🇺 Aus Bank Leads", callback_data="bank_lead:Aus:0")],
                 [InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]
             ])
         )
@@ -374,39 +389,70 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🔍 *Browse Leads*\n\nPlease select a bank lead country below to view all available banks:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🇺🇸 USA BANK LEADS", callback_data="bank_lead:USA")],
-                [InlineKeyboardButton("🇬🇧 UK BANK LEADS", callback_data="bank_lead:UK")],
-                [InlineKeyboardButton("🇮🇪 Ireland Bank Leads", callback_data="bank_lead:Ireland")],
-                [InlineKeyboardButton("🇦🇺 Aus Bank Leads", callback_data="bank_lead:Aus")],
+                [InlineKeyboardButton("🇺🇸 USA BANK LEADS", callback_data="bank_lead:USA:0")],
+                [InlineKeyboardButton("🇬🇧 UK BANK LEADS", callback_data="bank_lead:UK:0")],
+                [InlineKeyboardButton("🇮🇪 Ireland Bank Leads", callback_data="bank_lead:Ireland:0")],
+                [InlineKeyboardButton("🇦🇺 Aus Bank Leads", callback_data="bank_lead:Aus:0")],
                 [InlineKeyboardButton("🔍 Search Available Leads", callback_data="bank_search")],
                 [InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]
             ])
         )
 
     elif data.startswith("bank_lead:"):
-        country = data.split(":", 1)[1]
+        parts = data.split(":")
+        country = parts[1]
+        page = int(parts[2]) if len(parts) > 2 else 0
         context.user_data["bank_country"] = country
-        banks_list = BANK_LEADS_DATA.get(country, [])
         
-        # Displaying the list of banks for the chosen country
-        banks_formatted = "\n".join([f"• {bank}" for bank in banks_list])
+        banks_list = BANK_LEADS_DATA.get(country, [])
+        per_page = 20
+        total_pages = (len(banks_list) + per_page - 1) // per_page
+        if total_pages < 1:
+            total_pages = 1
+        if page >= total_pages:
+            page = total_pages - 1
+        if page < 0:
+            page = 0
+            
+        start_idx = page * per_page
+        end_idx = start_idx + per_page
+        current_chunk = banks_list[start_idx:end_idx]
+        
+        banks_formatted = "\n".join([f"• {bank}" for bank in current_chunk])
         preview_text = (
-            f"🏦 *{country} Bank Leads*\n"
+            f"🏦 *{country} Bank Leads* (Page {page + 1}/{total_pages})\n"
             f"Total available banks: {len(banks_list)}\n\n"
             f"*Banks Included:*\n{banks_formatted}\n\n"
             f"Select a package below to purchase:"
         )
         
+        # Navigation buttons: Back (Front), Page Indicator, Next
+        nav_buttons = []
+        nav_buttons.append(InlineKeyboardButton("⬅️ Front", callback_data=f"bank_lead:{country}:{page-1 if page > 0 else 0}"))
+        nav_buttons.append(InlineKeyboardButton(f"Page {page+1}/{total_pages}", callback_data="noop"))
+        nav_buttons.append(InlineKeyboardButton("Next ➡️", callback_data=f"bank_lead:{country}:{page+1 if page < total_pages - 1 else total_pages - 1}"))
+            
+        package_buttons = [
+            [InlineKeyboardButton("1K — £150", callback_data="bank_buy:1K:150"), InlineKeyboardButton("2K — £230", callback_data="bank_buy:2K:230")],
+            [InlineKeyboardButton("3K — £320", callback_data="bank_buy:3K:320"), InlineKeyboardButton("4K — £410", callback_data="bank_buy:4K:410")],
+            [InlineKeyboardButton("5K — £475", callback_data="bank_buy:5K:475"), InlineKeyboardButton("6K — £530", callback_data="bank_buy:6K:530")],
+            [InlineKeyboardButton("7K — £610", callback_data="bank_buy:7K:610"), InlineKeyboardButton("8K — £650", callback_data="bank_buy:8K:650")],
+            [InlineKeyboardButton("10K — £750", callback_data="bank_buy:10K:750"), InlineKeyboardButton("15K — £950", callback_data="bank_buy:15K:950")],
+            [InlineKeyboardButton("20K — £1,150", callback_data="bank_buy:20K:1150"), InlineKeyboardButton("25K — £1,550", callback_data="bank_buy:25K:1550")],
+            [InlineKeyboardButton("30K — £1,750", callback_data="bank_buy:30K:1750"), InlineKeyboardButton("50K — £2,050", callback_data="bank_buy:50K:2050")],
+            [InlineKeyboardButton("100K — £3,050", callback_data="bank_buy:100K:3050")],
+            nav_buttons,
+            [InlineKeyboardButton("⬅️ Back to Browse", callback_data="browse_leads")]
+        ]
+        
         await query.edit_message_text(
             preview_text,
             parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("1K Leads — £60", callback_data="bank_buy:1K:60")],
-                [InlineKeyboardButton("5K Leads — £200", callback_data="bank_buy:5K:200")],
-                [InlineKeyboardButton("10K Leads — £350", callback_data="bank_buy:10K:350")],
-                [InlineKeyboardButton("⬅️ Back", callback_data="browse_leads")]
-            ])
+            reply_markup=InlineKeyboardMarkup(package_buttons)
         )
+
+    elif data == "noop":
+        await query.answer()
 
     elif data == "bank_search":
         context.user_data["waiting_for_search"] = True
@@ -438,7 +484,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
                 [InlineKeyboardButton("👛 Wallet / Top Up", callback_data="wallet")],
-                [InlineKeyboardButton("⬅️ Back", callback_data=f"bank_lead:{country}")]
+                [InlineKeyboardButton("⬅️ Back", callback_data=f"bank_lead:{country}:0")]
             ])
         )
 
@@ -519,7 +565,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         amount   = selected.split(" - ")[0]
         price    = EMAIL_PRICES.get(amount, 0)
         context.user_data["pending_order"] = {"type": "Email Leads", "country": context.user_data.get("email_country"), "provider": context.user_data.get("email_provider"), "amount": amount, "price": price}
-        await query.edit_message_text(f"Confirm order for {amount} Email leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="main_menu")]]))
+        await query.edit_message_text(f"Confirm order for {amount} Email leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="wallet")]]))
 
     elif data == "sms_leads":
         await query.edit_message_text(
@@ -546,7 +592,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         amount   = selected.split(" - ")[0]
         price    = SMS_PRICES.get(amount, 0)
         context.user_data["pending_order"] = {"type": "SMS Leads", "country": context.user_data.get("sms_country"), "provider": context.user_data.get("sms_carrier"), "amount": amount, "price": price}
-        await query.edit_message_text(f"Confirm order for {amount} SMS leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="main_menu")]]))
+        await query.edit_message_text(f"Confirm order for {amount} SMS leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="wallet")]]))
 
     elif data == "crypto_leads":
         await query.edit_message_text(
@@ -566,7 +612,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         amount   = selected.split(" - ")[0]
         price    = CRYPTO_PRICES.get(amount, 0)
         context.user_data["pending_order"] = {"type": "Crypto Leads", "country": "CRYPTO", "provider": context.user_data.get("crypto_exchange"), "amount": amount, "price": price}
-        await query.edit_message_text(f"Confirm order for {amount} Crypto leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="main_menu")]]))
+        await query.edit_message_text(f"Confirm order for {amount} Crypto leads (£{price})?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")], [InlineKeyboardButton("❌ Cancel", callback_data="wallet")]]))
 
     elif data == "order_confirm":
         order = context.user_data.get("pending_order", {})
@@ -578,7 +624,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         set_user_balance(context, user.id, current_bal - price)
-        await query.edit_message_text(f"✅ *Order Successful!*\n\nRemaining Balance: £{get_user_balance(context, user.id)}", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Menu", callback_data="main_menu")]]))
+        await query.edit_message_text(f"✅ *Order Successful!*\n\nRemaining Balance: £{get_user_balance(context, user.id)}", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👛 Wallet", callback_data="wallet")], [InlineKeyboardButton("Menu", callback_data="main_menu")]]))
         
         if ADMIN_CHAT_ID:
             await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"🛒 *NEW PURCHASE*\nUser: @{user.username} (`{user.id}`)\nItem: {order.get('type')} ({order.get('amount')}) — £{price}")
@@ -660,3 +706,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
