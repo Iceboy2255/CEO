@@ -178,9 +178,56 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "age_leads":
         await query.edit_message_text(
-            "📅 *Age Leads + Country*\n\nFeature coming soon or select from available categories.",
+            "📅 *Age Leads + Country*\n\nStep 1: Please select gender:",
             parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]])
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🧔‍♀️ Female Leads", callback_data="age_gender:Female Leads"),
+                 InlineKeyboardButton("👴 Male Leads", callback_data="age_gender:Male Leads")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="main_menu")]
+            ])
+        )
+
+    elif data.startswith("age_gender:"):
+        gender = data.split(":", 1)[1]
+        context.user_data["age_gender"] = gender
+        await query.edit_message_text(
+            f"👤 *Gender:* {gender}\n\nStep 2: Please select age range:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("18-24", callback_data="age_range:18-24"), InlineKeyboardButton("25-34", callback_data="age_range:25-34")],
+                [InlineKeyboardButton("35-44", callback_data="age_range:35-44"), InlineKeyboardButton("45-54", callback_data="age_range:45-54")],
+                [InlineKeyboardButton("55-64", callback_data="age_range:55-64"), InlineKeyboardButton("65-74", callback_data="age_range:65-74")],
+                [InlineKeyboardButton("75-84", callback_data="age_range:75-84"), InlineKeyboardButton("85-94", callback_data="age_range:85-94")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="age_leads")]
+            ])
+        )
+
+    elif data.startswith("age_range:"):
+        age_range = data.split(":", 1)[1]
+        context.user_data["age_range"] = age_range
+        await query.edit_message_text(
+            f"👤 *Gender:* {context.user_data.get('age_gender')}\n📅 *Age:* {age_range}\n\nStep 3: Please select country:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🇬🇧 United Kingdom", callback_data="age_country:United Kingdom"),
+                 InlineKeyboardButton("🇺🇸 United States", callback_data="age_country:United States")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="age_leads")]
+            ])
+        )
+
+    elif data.startswith("age_country:"):
+        country = data.split(":", 1)[1]
+        context.user_data["age_country"] = country
+        gender = context.user_data.get("age_gender")
+        age_range = context.user_data.get("age_range")
+        await query.edit_message_text(
+            f"✅ *Selection Complete!*\n\n"
+            f"👤 Gender: {gender}\n"
+            f"📅 Age Range: {age_range}\n"
+            f"🌍 Country: {country}\n\n"
+            f"Available birth years: 1930-2025",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Menu", callback_data="main_menu")]])
         )
 
     elif data == "browse_leads":
@@ -407,4 +454,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
