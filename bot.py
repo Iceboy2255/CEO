@@ -64,13 +64,49 @@ _new_crypto_exchanges = [
     "Bithumb", "Coinone", "Korbit", "Deribit", "BitFlyer", "Coincheck", "Uphold",
     "eToro", "Robinhood Crypto", "Quidax", "Busha", "VALR", "Yellow Card", "Luno"
 ]
-# Ensure no duplicates while combining and preserving order
 CRYPTO_EXCHANGES = []
 for ex in _base_crypto_exchanges + _new_crypto_exchanges:
     if ex not in CRYPTO_EXCHANGES:
         CRYPTO_EXCHANGES.append(ex)
 
 CRYPTO_PRICES    = {"1k": 200, "2k": 380, "5k": 800, "10k": 1500, "25k": 3000}
+
+# ─── CRYPTO LEDGER CONFIGURATIONS ───
+LEDGER_COUNTRIES = [
+    "🇬🇧 United Kingdom",
+    "🇺🇸 United States",
+    "🇨🇦 Canada",
+    "🇦🇺 Australia",
+    "🇩🇪 Germany",
+    "🇫🇷 France",
+    "🇳🇱 Netherlands",
+    "🇸🇪 Sweden"
+]
+
+HARDWARE_WALLETS = [
+    "Ledger Nano X",
+    "Ledger Nano S Plus",
+    "Trezor Model T",
+    "Trezor Model One",
+    "Keystone Pro",
+    "SafePal S1",
+    "CoolWallet Pro",
+    "Tangem Wallet",
+    "BitBox02",
+    "Ellipal Titan"
+]
+
+LEDGER_PRICES = {
+    "1K": 400,
+    "2K": 650,
+    "3K": 850,
+    "4K": 1000,
+    "5K": 1150,
+    "10K": 1850,
+    "15K": 2450,
+    "20K": 2950,
+    "25K": 3350
+}
 
 AGE_LEADS_PRICES = {
     "1K": 40, "2K": 64, "3K": 82, "4K": 100, "5K": 110,
@@ -199,6 +235,7 @@ def main_menu_kb() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("📧 Email Leads",     callback_data="email_leads")],
         [InlineKeyboardButton("📱 SMS Leads",       callback_data="sms_leads")],
         [InlineKeyboardButton("💰 Crypto Leads",    callback_data="crypto_leads")],
+        [InlineKeyboardButton("💼 CRYPTO LEDGER",   callback_data="crypto_ledger_countries")],
         [InlineKeyboardButton("👛 Wallet",          callback_data="wallet")],
         [InlineKeyboardButton("❓ FAQ",             callback_data="faq")],
     ])
@@ -501,9 +538,108 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data["waiting_for_search"] = True
         await query.edit_message_text(
             "🔍 *Search Bank Leads*\n\nPlease type your search keyword (e.g., bank name) directly in the chat:",
-            parse_Mode="Markdown",
+            parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("⬅️ Back", callback_data="browse_leads")]
+            ])
+        )
+
+    # ── CRYPTO LEDGER FLOW ──
+    elif data == "crypto_ledger_countries":
+        buttons = []
+        for country in LEDGER_COUNTRIES:
+            buttons.append([InlineKeyboardButton(country, callback_data=f"ledger_country:{country}")])
+        buttons.append([InlineKeyboardButton("➡️ NEXT", callback_data="crypto_ledger_wallets:0")])
+        buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="main_menu")])
+
+        await query.edit_message_text(
+            f"💰 *Current Balance: £{balance}*\n\n💼 *Crypto Ledger* — Select Country:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+
+    elif data.startswith("ledger_country:"):
+        country = data.split(":", 1)[1]
+        context.user_data["ledger_country"] = country
+        await query.edit_message_text(
+            f"🌍 *Selected Country:* {country}\n\nNow select hardware wallet brand/product:",
+            parse_mode="Markdown",
+            reply_markup=make_single_column_grid(HARDWARE_WALLETS, "ledger_wallet", back="crypto_ledger_countries")
+        )
+
+    elif data.startswith("crypto_ledger_wallets:"):
+        page = int(data.split(":")[1])
+        per_page = 5
+        total_pages = (len(HARDWARE_WALLETS) + per_page - 1) // per_page
+        if total_pages < 1:
+            total_pages = 1
+        if page >= total_pages:
+            page = total_pages - 1
+        if page < 0:
+            page = 0
+
+        start_idx = page * per_page
+        end_idx = start_idx + per_page
+        current_chunk = HARDWARE_WALLETS[start_idx:end_idx]
+
+        wallet_buttons = []
+        for wallet in current_chunk:
+            wallet_buttons.append([InlineKeyboardButton(wallet, callback_data=f"ledger_wallet:{wallet}")])
+
+        nav_buttons = []
+        if page > 0:
+            nav_buttons.append(InlineKeyboardButton("⬅️ BACK", callback_data=f"crypto_ledger_wallets:{page - 1}"))
+        if page < total_pages - 1:
+            nav_buttons.append(InlineKeyboardButton("➡️ NEXT", callback_data=f"crypto_ledger_wallets:{page + 1}"))
+
+        if nav_buttons:
+            wallet_buttons.append(nav_buttons)
+
+        wallet_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="crypto_ledger_countries")])
+
+        await query.edit_message_text(
+            f"💼 *Crypto Ledger* — Hardware Wallets (Page {page + 1}/{total_pages}):",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(wallet_buttons)
+        )
+
+    elif data.startswith("ledger_wallet:"):
+        wallet_brand = data.split(":", 1)[1]
+        context.user_data["ledger_wallet"] = wallet_brand
+        
+        price_buttons = []
+        for pkg, prc in LEDGER_PRICES.items():
+            price_buttons.append([InlineKeyboardButton(f"{pkg} = £{prc:,}", callback_data=f"ledger_price:{pkg}")])
+        price_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="crypto_ledger_countries")])
+
+        await query.edit_message_text(
+            f"💼 *Hardware Wallet:* {wallet_brand}\n\nSelect Package & Price:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(price_buttons)
+        )
+
+    elif data.startswith("ledger_price:"):
+        package = data.split(":", 1)[1]
+        price = LEDGER_PRICES.get(package, 0)
+        context.user_data["pending_order"] = {
+            "type": "Crypto Ledger",
+            "country": context.user_data.get("ledger_country", "N/A"),
+            "provider": context.user_data.get("ledger_wallet", "N/A"),
+            "amount": package,
+            "price": price
+        }
+        await query.edit_message_text(
+            f"🛒 *Confirm Crypto Ledger Order*\n\n"
+            f"🌍 Country: {context.user_data.get('ledger_country')}\n"
+            f"🔒 Hardware Wallet: {context.user_data.get('ledger_wallet')}\n"
+            f"📦 Package: {package}\n"
+            f"💰 Price: £{price:,}\n\n"
+            f"Your Balance: £{balance}",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Confirm Purchase", callback_data="order_confirm")],
+                [InlineKeyboardButton("👛 Wallet / Top Up", callback_data="wallet")],
+                [InlineKeyboardButton("⬅️ Back", callback_data=f"ledger_wallet:{context.user_data.get('ledger_wallet')}")]
             ])
         )
 
