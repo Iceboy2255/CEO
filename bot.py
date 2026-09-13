@@ -81,7 +81,7 @@ AGE_LEADS_PRICES = {
     "500K": 1610,
 }
 
-# ─── UPDATED BANK LEADS CATALOG ───
+# ─── BANK LEADS CATALOG ───
 BANK_LEADS_DATA = {
     "USA": [
         "JPMorgan Chase", "Bank of America", "Wells Fargo", "Citibank", "U.S. Bank", "PNC Bank", "Truist Bank", "Capital One", "TD Bank", "BMO Bank",
@@ -228,7 +228,6 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query_text = update.message.text.lower()
         context.user_data["waiting_for_search"] = False
         
-        # Search across all countries in BANK_LEADS_DATA
         matches = []
         for country, banks in BANK_LEADS_DATA.items():
             for bank in banks:
@@ -372,7 +371,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "browse_leads":
         await query.edit_message_text(
-            "🔍 *Browse Leads*\n\nPlease select a bank lead country or search available leads below:",
+            "🔍 *Browse Leads*\n\nPlease select a bank lead country below to view all available banks:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🇺🇸 USA BANK LEADS", callback_data="bank_lead:USA")],
@@ -388,7 +387,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         country = data.split(":", 1)[1]
         context.user_data["bank_country"] = country
         banks_list = BANK_LEADS_DATA.get(country, [])
-        preview_text = f"🏦 *{country} Bank Leads*\nTotal integrated banks: {len(banks_list)}\n\nSample banks included:\n" + ", ".join(banks_list[:5]) + "...\n\nSelect a package below:"
+        
+        # Displaying the list of banks for the chosen country
+        banks_formatted = "\n".join([f"• {bank}" for bank in banks_list])
+        preview_text = (
+            f"🏦 *{country} Bank Leads*\n"
+            f"Total available banks: {len(banks_list)}\n\n"
+            f"*Banks Included:*\n{banks_formatted}\n\n"
+            f"Select a package below to purchase:"
+        )
         
         await query.edit_message_text(
             preview_text,
