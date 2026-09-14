@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -18,6 +19,7 @@ SOL_ADDRESS    = os.environ.get("SOL_ADDRESS", "YOUR_SOL_ADDRESS")
 LTC_ADDRESS    = os.environ.get("LTC_ADDRESS", "YOUR_LTC_ADDRESS")
 
 ADMIN_IDS      = [6353471784, 123456789]
+USERS_FILE     = "users.json"
 
 WALLET_ADDRESSES = {
     "Bitcoin (BTC)":         BTC_ADDRESS,
@@ -86,43 +88,15 @@ LEDGER_COUNTRIES = [
 ]
 
 HARDWARE_WALLETS = [
-    "Ledger",
-    "Trezor",
-    "SafePal",
-    "Tangem",
-    "Keystone",
-    "Ellipal",
-    "KeepKey",
-    "OneKey",
-    "CoolWallet",
-    "NGRAVE",
-    "BitBox",
-    "GridPlus",
-    "Arculus",
-    "SecuX",
-    "D’CENT",
-    "Blockstream Jade",
-    "Coldcard",
-    "Foundation Passport",
-    "Cypherock",
-    "AirGap",
-    "BC Vault",
-    "Cobo Vault",
-    "Ballet",
-    "Satochip",
-    "SeedSigner"
+    "Ledger", "Trezor", "SafePal", "Tangem", "Keystone", "Ellipal", "KeepKey",
+    "OneKey", "CoolWallet", "NGRAVE", "BitBox", "GridPlus", "Arculus", "SecuX",
+    "D’CENT", "Blockstream Jade", "Coldcard", "Foundation Passport", "Cypherock",
+    "AirGap", "BC Vault", "Cobo Vault", "Ballet", "Satochip", "SeedSigner"
 ]
 
 LEDGER_PRICES = {
-    "1K": 400,
-    "2K": 650,
-    "3K": 850,
-    "4K": 1000,
-    "5K": 1150,
-    "10K": 1850,
-    "15K": 2450,
-    "20K": 2950,
-    "25K": 3350
+    "1K": 400, "2K": 650, "3K": 850, "4K": 1000, "5K": 1150,
+    "10K": 1850, "15K": 2450, "20K": 2950, "25K": 3350
 }
 
 AGE_LEADS_PRICES = {
@@ -143,51 +117,17 @@ BANK_FILTER_AGES = ["50–80", "60–80", "50–70", "40–70", "40–60", "30�
 BANK_LEADS_DATA = {
     "USA": [
         "JPMorgan Chase", "Bank of America", "Wells Fargo", "Citibank", "U.S. Bank", "PNC Bank", "Truist Bank", "Capital One", "TD Bank", "BMO Bank",
-        "Citizens Bank", "Fifth Third Bank", "KeyBank", "Huntington Bank", "Regions Bank", "M&T Bank", "Ally Bank", "Discover Bank", "Synchrony Bank", "Barclays Bank Delaware",
-        "Goldman Sachs Bank USA", "Morgan Stanley Private Bank", "Charles Schwab Bank", "First Citizens Bank", "Flagstar Bank", "Comerica Bank", "Zions Bank", "East West Bank", "Webster Bank", "New York Community Bank",
-        "Old National Bank", "First Horizon Bank", "Popular Bank", "Valley Bank", "Citizens Business Bank", "BankUnited", "Pinnacle Bank", "First National Bank of Pennsylvania", "Hancock Whitney Bank", "Synovus Bank",
-        "Frost Bank", "SouthState Bank", "Associated Bank", "Wintrust Bank", "First Interstate Bank", "Columbia Bank", "Umpqua Bank", "Pacific Premier Bank", "Cathay Bank", "City National Bank",
-        "Western Alliance Bank", "Axos Bank", "Live Oak Bank", "Bread Savings", "SoFi Bank", "Varo Bank", "Current", "Chime", "Upgrade", "LendingClub Bank",
-        "American Express National Bank", "Synchrony Financial", "Marcus by Goldman Sachs", "Bank of the West", "Santander Bank", "HSBC Bank USA", "MUFG Union Bank", "Bank of China USA", "ICBC USA", "Deutsche Bank USA",
-        "BNP Paribas USA", "Crédit Agricole CIB", "Société Générale", "Standard Chartered Bank", "ING Bank USA", "Rabobank", "Commerzbank USA", "Banco Santander", "Banco Popular North America", "FirstBank",
-        "Arvest Bank", "BOK Financial", "Commerce Bank", "Prosperity Bank", "Texas Capital Bank", "Independent Bank", "Trustmark National Bank", "Hancock Whitney", "First Merchants Bank", "United Bank",
-        "Cadence Bank", "Renasant Bank", "Ameris Bank", "TowneBank"
+        "Citizens Bank", "Fifth Third Bank", "KeyBank", "Huntington Bank", "Regions Bank", "M&T Bank", "Ally Bank", "Discover Bank", "Synchrony Bank", "Barclays Bank Delaware"
     ],
     "UK": [
         "HSBC UK", "Barclays", "Lloyds Bank", "NatWest", "Royal Bank of Scotland", "Santander UK", "Halifax", "Bank of Scotland", "Nationwide", "TSB",
-        "Metro Bank", "Virgin Money", "Monzo Bank", "Starling Bank", "Chase UK", "First Direct", "Co-operative Bank", "Kroo Bank", "Revolut Bank", "Wise",
-        "Aldermore Bank", "Atom Bank", "Allica Bank", "Arbuthnot Latham", "Gatehouse Bank", "Al Rayan Bank", "Bank of Ireland UK", "Bank of China UK", "Bank of Beirut UK", "Bank of Baroda UK",
-        "Bank of Ceylon UK", "Bank of London and The Middle East", "Brown Shipley", "C. Hoare & Co", "FirstBank UK", "GB Bank", "Griffin Bank", "Guaranty Trust Bank UK", "Gulf International Bank UK", "Habib Bank Zurich",
-        "Hampshire Trust Bank", "Handelsbanken", "HBL Bank UK", "HSBC Bank", "ICBC Standard Bank", "ICICI Bank UK", "Investec Bank", "LHV Bank", "Lloyds Bank Corporate Markets", "Hampden & Co",
-        "Shawbrook Bank", "Secure Trust Bank", "Tandem Bank", "Triodos Bank UK", "Vanquis Bank", "Vida Bank", "Zopa Bank", "OakNorth Bank", "Paragon Bank", "Close Brothers",
-        "Charter Court Financial Services", "Cambridge & Counties Bank", "Recognise Bank", "DF Capital Bank", "United Trust Bank", "Arbuthnot Commercial Asset Based Lending", "Bank of Africa UK", "FCMB Bank UK", "FCE Bank", "FidBank UK",
-        "Ghana International Bank", "Goldman Sachs International Bank", "Arab Bank Europe", "Bank Mandiri Europe", "Bank Saderat", "Bank Sepah International", "British Arab Commercial Bank", "First Abu Dhabi Bank", "First Commercial Bank", "FirstRand Bank",
-        "JPMorgan Chase Bank", "Bank of America", "Citibank UK", "Deutsche Bank", "BNP Paribas", "Crédit Agricole", "Danske Bank", "DBS Bank", "DNB Bank", "Emirates NBD",
-        "ING Bank", "MUFG Bank", "Mizuho Bank", "Standard Chartered", "State Bank of India UK", "UBS", "United Bank for Africa UK"
+        "Metro Bank", "Virgin Money", "Monzo Bank", "Starling Bank", "Chase UK", "First Direct", "Co-operative Bank", "Kroo Bank", "Revolut Bank", "Wise"
     ],
     "Ireland": [
-        "AIB", "Bank of Ireland", "Permanent TSB", "EBS", "Avant Money", "Bank of America Europe DAC", "Citibank Europe", "Barclays Bank Ireland", "Bank of Montreal Europe", "Dell Bank International",
-        "Hewlett-Packard International Bank", "KBC Bank Ireland", "Ulster Bank Ireland", "BNP Paribas Ireland", "Deutsche Bank Ireland", "HSBC Continental Europe", "J.P. Morgan Bank Ireland", "Goldman Sachs Bank Europe", "Morgan Stanley Bank International", "State Street Bank International",
-        "Northern Trust", "Bank of China", "China Construction Bank", "Industrial and Commercial Bank of China", "Agricultural Bank of China", "Credit Suisse International", "UBS Europe", "Société Générale", "Crédit Agricole", "ING Bank",
-        "Rabobank", "Danske Bank", "Nordea Bank", "DNB Bank", "ABN AMRO", "Commerzbank", "UniCredit Bank", "Intesa Sanpaolo", "Banco Santander", "BBVA",
-        "CaixaBank", "Banco Sabadell", "Bankinter", "BNP Paribas Securities Services", "Bank of Nova Scotia", "Royal Bank of Canada", "Canadian Imperial Bank of Commerce", "Toronto-Dominion Bank", "National Bank of Canada", "MUFG Bank",
-        "Mizuho Bank", "Sumitomo Mitsui Banking Corporation", "Nomura Bank", "Shinhan Bank", "Woori Bank", "Hana Bank", "KEB Hana Bank", "Korea Development Bank", "Bank of Tokyo-Mitsubishi", "Arab Bank",
-        "Qatar National Bank", "Emirates NBD", "First Abu Dhabi Bank", "Mashreq Bank", "Abu Dhabi Commercial Bank", "Kuwait Finance House", "Ahli United Bank", "Bank of Beirut", "Bank of Cyprus", "Hellenic Bank",
-        "Eurobank", "National Bank of Greece", "Alpha Bank", "Piraeus Bank", "Erste Bank", "Raiffeisen Bank International", "BAWAG", "Česká spořitelna", "ING Bank N.V.", "Lloyds Bank",
-        "Barclays", "HSBC", "Standard Chartered", "Santander UK", "NatWest", "Lloyds Banking Group", "Bank of Scotland", "Bank of India", "State Bank of India", "Bank of Baroda",
-        "Punjab National Bank", "Union Bank of India", "Axis Bank", "ICICI Bank", "HDFC Bank", "Canara Bank", "Indian Overseas Bank", "UCO Bank", "United Bank for Africa"
+        "AIB", "Bank of Ireland", "Permanent TSB", "EBS", "Avant Money", "Bank of America Europe DAC", "Citibank Europe", "Barclays Bank Ireland", "Bank of Montreal Europe", "Dell Bank International"
     ],
     "Aus": [
-        "Commonwealth Bank", "Westpac", "ANZ", "National Australia Bank", "Macquarie Bank", "Bendigo Bank", "Bank of Queensland", "Bank Australia", "Bank of Sydney", "Bank of China Australia",
-        "HSBC Australia", "ING Australia", "Rabobank Australia", "Judo Bank", "AMP Bank", "Beyond Bank Australia", "Great Southern Bank", "Suncorp Bank", "Bankwest", "St.George Bank",
-        "BankSA", "Bank of Melbourne", "ME Bank", "Ubank", "Up Bank", "Adelaide Bank", "Rural Bank", "Heritage Bank", "People’s Choice", "People First Bank",
-        "RACQ Bank", "Greater Bank", "Newcastle Permanent", "P&N Bank", "BCU Bank", "BankVic", "QBANK", "Queensland Country Bank", "Regional Australia Bank", "Horizon Bank",
-        "Hume Bank", "IMB Bank", "Coastline Bank", "Cairns Bank", "Central Murray Bank", "Bank Orange", "Darling Downs Bank", "Bank First", "BankWAW", "SWSBANK",
-        "The Capricornian Bank", "Unity Bank", "Firefighters Mutual Bank", "Health Professionals Bank", "Teachers Mutual Bank", "UniBank", "Australian Military Bank", "Defence Bank", "Police Bank", "Australian Settlements Limited",
-        "Auswide Bank", "Avenue Bank", "BNK Bank", "First Option Bank", "Gateway Bank", "Maitland Mutual", "MyState Bank", "Orange Credit Union", "Southern Cross Credit Union", "Traditional Credit Union",
-        "Transport Mutual", "Tyro Bank", "WAW Bank", "Woolworths Team Bank", "Bank of us", "The Mutual Bank", "The MAC", "Newcastle Greater Mutual Group", "Norfina", "Revolut Bank Australia",
-        "Arab Bank Australia", "Bank of America Australia", "JPMorgan Chase Bank Australia", "Deutsche Bank Australia", "DBS Bank Australia", "Mizuho Bank Australia", "MUFG Bank Australia", "Sumitomo Mitsui Banking Corporation", "Standard Chartered Bank Australia", "State Bank of India Australia",
-        "Bank of India Australia", "ICBC Australia", "Agricultural Bank of China Australia", "China Construction Bank Australia", "Bank of Communications Australia", "E.SUN Commercial Bank Australia", "Mega International Commercial Bank", "Taiwan Business Bank Australia", "Taiwan Cooperative Bank Australia"
+        "Commonwealth Bank", "Westpac", "ANZ", "National Australia Bank", "Macquarie Bank", "Bendigo Bank", "Bank of Queensland", "Bank Australia", "Bank of Sydney", "Bank of China Australia"
     ]
 }
 
@@ -204,6 +144,23 @@ FAQ_TEXT = (
 )
 
 # ─── HELPER FUNCTIONS ───
+def load_all_users() -> set:
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r") as f:
+                data = json.load(f)
+                return set(data)
+        except Exception as e:
+            logger.error("Error loading users file: %s", e)
+    return set()
+
+def save_all_users(users_set: set) -> None:
+    try:
+        with open(USERS_FILE, "w") as f:
+            json.dump(list(users_set), f)
+    except Exception as e:
+        logger.error("Error saving users file: %s", e)
+
 async def _async_console_log(bot, chat_id, text):
     try:
         chat_to_use = chat_id or ADMIN_CHAT_ID
@@ -229,8 +186,11 @@ def is_admin(update: Update) -> bool:
 
 def track_user(context: ContextTypes.DEFAULT_TYPE, user) -> None:
     if "all_users" not in context.bot_data:
-        context.bot_data["all_users"] = set()
-    context.bot_data["all_users"].add(user.id)
+        context.bot_data["all_users"] = load_all_users()
+    
+    if user.id not in context.bot_data["all_users"]:
+        context.bot_data["all_users"].add(user.id)
+        save_all_users(context.bot_data["all_users"])
 
 def get_user_balance(context: ContextTypes.DEFAULT_TYPE, user_id: int) -> int:
     if "balances" not in context.bot_data:
@@ -439,7 +399,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             ])
         )
 
-    # ── BROWSE LEADS FLOW ──
     elif data == "browse_leads":
         await console_log(context, user, "opened Browse Leads section")
         await query.edit_message_text(
@@ -587,7 +546,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             ])
         )
 
-    # ── CRYPTO LEDGER FLOW ──
     elif data == "crypto_ledger_countries":
         await console_log(context, user, "opened Crypto Ledger section")
         buttons = []
@@ -1049,7 +1007,8 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Usage: /broadcast <message>")
         return
     
-    all_users = context.bot_data.get("all_users", set())
+    # Load all persisted users
+    all_users = load_all_users()
     success_count = 0
     fail_count = 0
 
