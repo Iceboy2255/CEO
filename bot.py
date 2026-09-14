@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 # ─── CONFIGURATION ───
 TOKEN          = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 ADMIN_USERNAME = "@hostingceo8"
-ADMIN_CHAT_ID  = os.environ.get("ADMIN_CHAT_ID", "")
-CONSOLE_CHAT   = os.environ.get("CONSOLE_CHAT_ID", "")
+ADMIN_CHAT_ID  = os.environ.get("ADMIN_CHAT_ID", "6353471784")
+CONSOLE_CHAT   = os.environ.get("CONSOLE_CHAT_ID", "6353471784")
 BTC_ADDRESS    = os.environ.get("BTC_ADDRESS", "YOUR_BTC_ADDRESS")
 ETH_ADDRESS    = os.environ.get("ETH_ADDRESS", "YOUR_ETH_ADDRESS")
 SOL_ADDRESS    = os.environ.get("SOL_ADDRESS", "YOUR_SOL_ADDRESS")
 LTC_ADDRESS    = os.environ.get("LTC_ADDRESS", "YOUR_LTC_ADDRESS")
 
-ADMIN_IDS      = [123456789]
+ADMIN_IDS      = [6353471784, 123456789]
 
 WALLET_ADDRESSES = {
     "Bitcoin (BTC)":         BTC_ADDRESS,
