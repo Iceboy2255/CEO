@@ -117,10 +117,10 @@ BANK_FILTER_AGES = ["50–80", "60–80", "50–70", "40–70", "40–60", "30�
 BANK_LEADS_DATA = {
     "USA": [
         "JPMorgan Chase", "Bank of America", "Wells Fargo", "Citibank", "U.S. Bank", "PNC Bank", "Truist Bank", "Capital One", "TD Bank", "BMO Bank",
-        "Citizens Bank", "Fifth Third Bank", "KeyBank", "Huntington Bank", "Regions Bank", "M&T Bank", "Ally Bank", "Discover Bank", "Synchrony Bank", "Barclays Bank Delaware"
+        "Citizens Bank", "Fifth Third Bank", "KeyBank", "Huntington Bank", "Regions Bank", "M&T Bank", "Ally Bank", "Discover Bank", "Synchrony Bank", "Zaple", "Barclays Bank Delaware" 
     ],
     "UK": [
-        "HSBC UK", "Barclays", "Lloyds Bank", "NatWest", "Royal Bank of Scotland", "Santander UK", "Halifax", "Bank of Scotland", "Nationwide", "TSB",
+        "HSBC UK", "Barclays", "Lloyds Bank", "NatWest", "Royal Bank of Scotland", "Santander UK", "Zaple", "Halifax", "Bank of Scotland", "Zopas", "Nationwide", "TSB",
         "Metro Bank", "Virgin Money", "Monzo Bank", "Starling Bank", "Chase UK", "First Direct", "Co-operative Bank", "Kroo Bank", "Revolut Bank", "Wise"
     ],
     "Ireland": [
