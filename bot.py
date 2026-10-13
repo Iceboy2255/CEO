@@ -1007,7 +1007,6 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Usage: /broadcast <message>")
         return
     
-    # Load all persisted users
     all_users = load_all_users()
     success_count = 0
     fail_count = 0
@@ -1043,9 +1042,15 @@ def main() -> None:
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
     logger.info("Bot is running...")
-    app.run_polling()
+    
+    # Safe startup method compatible with all versions of python-telegram-bot
+    try:
+        app.run_polling(drop_pending_updates=True)
+    except TypeError:
+        app.run_polling()
 
 if __name__ == "__main__":
     main()
+
 
 
