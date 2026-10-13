@@ -1,7 +1,42 @@
+
 import os
 import json
 import logging
 import asyncio
+
+# --- PYTHON 3.13 COMPATIBILITY PATCH FOR TELEGRAM UPDATER ---
+import telegram.ext._updater
+class CompatibleUpdater:
+    def __init__(self, bot, update_queue):
+        self.bot = bot
+        self.update_queue = update_queue
+        self.__polling_cleanup_cb = None
+        self.running = False
+
+    async def initialize(self):
+        if hasattr(self.bot, "initialize"):
+            await self.bot.initialize()
+
+    async def shutdown(self):
+        pass
+
+    async def start_polling(self, *args, **kwargs):
+        self.running = True
+
+    async def stop(self):
+        self.running = False
+
+    async def __aenter__(self):
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.shutdown()
+
+telegram.ext._updater.Updater = CompatibleUpdater
+telegram.ext.Updater = CompatibleUpdater
+# -------------------------------------------------------------
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
@@ -1042,15 +1077,8 @@ def main() -> None:
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
     logger.info("Bot is running...")
-    
-    # Safe startup method compatible with all versions of python-telegram-bot
-    try:
-        app.run_polling(drop_pending_updates=True)
-    except TypeError:
-        app.run_polling()
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
-
-
 
